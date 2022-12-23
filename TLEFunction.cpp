@@ -31,7 +31,7 @@ bool checkNameSat(String nameSat, String payload, uint16_t& posStartTLEsLine1){
         }  
       }
     }
-    i = j + STEP_JUMP_TLE_LORA;
+    i = j + STEP_JUMP_TLE;
   }
   return false;
 }
@@ -64,7 +64,7 @@ uint8_t getAmountOfSat(String payload)
   uint16_t lengthOfPayload = payload.length();
   for(uint16_t index = 0; index < lengthOfPayload; index++){
     if(payload[index] == '\n'){
-      index = index + STEP_JUMP_TLE_LORA;
+      index = index + STEP_JUMP_TLE;
       amountOfSat++;
     }
   }
@@ -86,6 +86,6 @@ void getAllSatName(String* arraySatNames, String payload)
     }
     if(element > amountOfSat)
       break;
-    indexStart = indexStop + STEP_JUMP_TLE_LORA;
+    indexStart = indexStop + STEP_JUMP_TLE;
   }
 }
