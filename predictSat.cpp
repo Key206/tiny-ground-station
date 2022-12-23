@@ -1,5 +1,5 @@
 #include "predictSat.h"
-
+#include "TLEFunction.h"
 
 void getEpochTimeNow(unsigned long& epochTime){
   struct tm timeinfo;
@@ -32,4 +32,17 @@ unsigned long unixTimestamp(int year, int month, int day, int hour, int min, int
   if ( (month > 2) && (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)) )
     days_since_1970 += 1; /* +leap day, if year is a leap year */
   return sec + 60 * ( min + 60 * (hour + 24 * days_since_1970) );
+}
+void initialize_Sat(String nameOfSat, Sgp4& sat, String payload)
+{
+  char arrSatName[20];
+  static char tleLine1[70];
+  static char tleLine2[70];
+  uint8_t len = 0;
+  getTLE(nameOfSat, tleLine1, tleLine2, payload);
+  Serial.println(tleLine1);
+  Serial.println(tleLine2);
+  len = nameOfSat.length() + 1; 
+  nameOfSat.toCharArray(arrSatName, len);
+  sat.init(arrSatName, tleLine1,tleLine2);
 }
