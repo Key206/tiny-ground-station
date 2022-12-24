@@ -11,5 +11,5 @@
 //#define DIR_MEASURE                 25
 #define MOTOR_INTERFACE_TYPE        1
 
-void backRotateStepper(AccelStepper mystepper, double Angle);
-void rotateStepper(AccelStepper mystepper,double Angle);
+void backRotateStepper(AccelStepper& mystepper, double Angle);
+void rotateStepper(AccelStepper& mystepper,double Angle);
