@@ -24,9 +24,9 @@ AccelStepper motorEl(MOTOR_INTERFACE_TYPE, STEP_EL, DIR_EL);
 
 String payload;
 unsigned long epochNow = 1660138928;
+String* upcomingSatList;
 
 void setup() {
-  // put your setup code here, to run once:
   Serial.begin(9600);
   WiFi.begin(SSID_WIFI, PASSWORD_WIFI);
   while (WiFi.status() != WL_CONNECTED);
@@ -37,11 +37,14 @@ void setup() {
   Serial.println(epochNow);
   
   updateTleData(&http, payload, SERVER_TLE_TINYGS);
-  mySat.site(10.869,106.802,18);
+  mySat.site(10.954,106.852,18);
+  
+  upcomingSatList = new String[NUM_OF_SAT];
+  getAllSatName(upcomingSatList, payload);
+  createUpcomingList(upcomingSatList, mySat, payload, epochNow);
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
   Serial.println("Hello world");
   delay(1000);
 }

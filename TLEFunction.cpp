@@ -18,8 +18,8 @@ bool checkNameSat(String nameSat, String payload, uint16_t& posStartTLEsLine1){
   String tempName;
   uint16_t i, j;
   uint16_t lengthOfPayload = payload.length();
-  for(i = 0; i < lengthOfPayload; i++){
-    for(j = i; j < i + 50; j++){
+  for(i = 0; i < lengthOfPayload; ++i){
+    for(j = i; j < i + 50; ++j){
       if(payload[j] == '\n'){
         tempName = payload.substring(i,j);
         if(strcmp(tempName.c_str(), nameSat.c_str()) == 0){
@@ -40,7 +40,7 @@ bool getTLE(String nameSat, char* tle_line1, char* tle_line2, String payload){
   uint8_t count = 0;
   uint16_t i;
   if(checkNameSat(nameSat, payload, posStartTLEsLine1)){
-    for(i = posStartTLEsLine1; i < posStartTLEsLine1 + 69; i++){
+    for(i = posStartTLEsLine1; i < posStartTLEsLine1 + 69; ++i){
       if(payload[i] != '\n'){
         tle_line1[count] = payload[i];
         tle_line2[count] = payload[i + 70];
@@ -62,8 +62,8 @@ uint8_t getAmountOfSat(String payload)
 {
   uint8_t amountOfSat = 0;
   uint16_t lengthOfPayload = payload.length();
-  for(uint16_t index = 0; index < lengthOfPayload; index++){
-    if(payload[index] == '\n'){
+  for(uint16_t index = 0; index < lengthOfPayload; ++index){
+    if(payload[index] == '\n'){   
       index = index + STEP_JUMP_TLE;
       amountOfSat++;
     }
@@ -74,18 +74,12 @@ void getAllSatName(String* arraySatNames, String payload)
 {
   uint8_t element = 0;
   uint16_t indexStart, indexStop;
-  uint8_t amountOfSat = getAmountOfSat(payload);
-  uint16_t lengthOfPayload = payload.length();
-  for(indexStart = 0; indexStart < lengthOfPayload; indexStart++){
-    for(indexStop = indexStart; indexStop < lengthOfPayload; indexStop++){
-      if(payload[indexStop] == '\n'){
-        arraySatNames[element] = payload.substring(indexStart,indexStop);
-        element++;
-        break;
-      }
+  for(indexStart = 0; element < NUM_OF_SAT; ++indexStart){
+    indexStop = indexStart;
+    while(payload[indexStop] != '\n'){
+      ++indexStop;
     }
-    if(element > amountOfSat)
-      break;
+    arraySatNames[element++] = payload.substring(indexStart,indexStop);
     indexStart = indexStop + STEP_JUMP_TLE;
   }
 }

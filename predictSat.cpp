@@ -40,9 +40,47 @@ void initialize_Sat(String nameOfSat, Sgp4& sat, String payload)
   static char tleLine2[70];
   uint8_t len = 0;
   getTLE(nameOfSat, tleLine1, tleLine2, payload);
-  Serial.println(tleLine1);
-  Serial.println(tleLine2);
+  //Serial.println(tleLine1);
+  //Serial.println(tleLine2);
   len = nameOfSat.length() + 1; 
   nameOfSat.toCharArray(arrSatName, len);
   sat.init(arrSatName, tleLine1,tleLine2);
+}
+unsigned long Predict(Sgp4& sat, unsigned long unix_t){
+  passinfo overpass;                       
+  sat.initpredpoint(unix_t , 0.0);       
+  int  year; int mon; int day; int hr; int minute; double sec;
+  bool nonError;
+  nonError = sat.nextpass(&overpass,10);    
+  if(nonError){ 
+    invjday(overpass.jdmax ,GMT_OFFSET_SECOND ,true , year, mon, day, hr, minute, sec);
+    //Serial.println("Max: elev=" + String(overpass.maxelevation) + "° " + String(hr) + ':' + String(minute) + ':' + String(sec));
+    unix_t = getUnixFromJulian(overpass.jdmax);
+    return unix_t;
+  }else{
+    Serial.println("Prediction error");
+  }
+}
+void createUpcomingList(String* listUpcomingSat, Sgp4 sat, String payload, unsigned long unix_t)
+{  
+  unsigned long* timeMaxElevationList = new unsigned long[NUM_OF_SAT];
+  for(uint8_t i = 0; i < NUM_OF_SAT; ++i){
+    initialize_Sat(listUpcomingSat[i], sat, payload);
+    timeMaxElevationList[i] = Predict(sat, unix_t);
+  }
+  for(uint8_t i = 0; i < NUM_OF_SAT - 1; ++i){
+    for(uint8_t j = i + 1; j < NUM_OF_SAT; ++j){
+      if(timeMaxElevationList[i] > timeMaxElevationList[j]){
+        String tmp_name = listUpcomingSat[i];
+        unsigned long tmp_t = timeMaxElevationList[i];
+        
+        listUpcomingSat[i] = listUpcomingSat[j];
+        timeMaxElevationList[i] = timeMaxElevationList[j];
+        
+        listUpcomingSat[j] = tmp_name;
+        timeMaxElevationList[j] = tmp_t; 
+      }
+    }
+  }
+  delete[] timeMaxElevationList;
 }

@@ -2,6 +2,7 @@
 #include <HTTPClient.h>
 
 #define STEP_JUMP_TLE          140
+#define NUM_OF_SAT             10
 
 void updateTleData(HTTPClient* http, String& payload, String serverName);
 bool checkNameSat(String nameSat, String payload, uint16_t& posStartTLEsLine1);
