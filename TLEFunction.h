@@ -3,6 +3,7 @@
 
 #define STEP_JUMP_TLE          140
 #define NUM_OF_SAT             10
+#define OFFSET_TIME_PREDICT    600 // in second
 
 void updateTleData(HTTPClient* http, String& payload, String serverName);
 bool checkNameSat(String nameSat, String payload, uint16_t& posStartTLEsLine1);

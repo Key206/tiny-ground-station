@@ -9,6 +9,5 @@
 #define DIR_EL                      33
 #define MOTOR_INTERFACE_TYPE        1
 
-
 void backRotateStepper(AccelStepper& mystepper, double Angle);
 void rotateStepper(AccelStepper& mystepper,double Angle);

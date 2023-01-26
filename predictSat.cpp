@@ -84,3 +84,33 @@ void createUpcomingList(String* listUpcomingSat, Sgp4 sat, String payload, unsig
   }
   delete[] timeMaxElevationList;
 }
+String getHigherSat(String* listUpcomingSat)
+{
+  return listUpcomingSat[0];
+}
+void sortUpcomingList(String* listUpcomingSat, Sgp4 sat, String payload, unsigned long unix_t)
+{
+  unsigned long* timeMaxElevationList = new unsigned long[NUM_OF_SAT];  
+  initialize_Sat(listUpcomingSat[0], sat, payload);
+  unsigned long tmp_t = unix_t + PREDICT_OFFSET_SECOND;
+  timeMaxElevationList[0] = Predict(sat, tmp_t);
+  for(uint8_t i = 1; i < NUM_OF_SAT; ++i){
+    initialize_Sat(listUpcomingSat[i], sat, payload);
+    timeMaxElevationList[i] = Predict(sat, unix_t);
+  }
+  int j;
+  for (uint8_t i = 1; i < NUM_OF_SAT; ++i){
+    tmp_t = timeMaxElevationList[i];
+    String tmp_name = listUpcomingSat[i];
+    j = i - 1;
+    while (j >= 0 && timeMaxElevationList[j] > tmp_t)
+    {
+      timeMaxElevationList[j + 1] = timeMaxElevationList[j];
+      listUpcomingSat[j + 1] = listUpcomingSat[j];
+      j = j - 1;
+    }
+    timeMaxElevationList[j + 1] = tmp_t;
+    listUpcomingSat[j + 1] = tmp_name;
+  }
+  delete[] timeMaxElevationList;
+}

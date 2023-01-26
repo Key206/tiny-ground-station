@@ -44,7 +44,7 @@ bool getTLE(String nameSat, char* tle_line1, char* tle_line2, String payload){
       if(payload[i] != '\n'){
         tle_line1[count] = payload[i];
         tle_line2[count] = payload[i + 70];
-        count++;
+        ++count;
       }
       else{
         break;

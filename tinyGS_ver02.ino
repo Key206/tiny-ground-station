@@ -42,11 +42,24 @@ void setup() {
   upcomingSatList = new String[NUM_OF_SAT];
   getAllSatName(upcomingSatList, payload);
   createUpcomingList(upcomingSatList, mySat, payload, epochNow);
+  for(int i = 0; i < NUM_OF_SAT; i++){
+    Serial.println(upcomingSatList[i]);
+  }
+  Serial.print("Higher: "); Serial.println(getHigherSat(upcomingSatList));
+  delay(5000);
 }
 
 void loop() {
   Serial.println("Hello world");
-  delay(1000);
+  delay(3000);
+  getEpochTimeNow(epochNow);
+  Serial.println(epochNow);
+  sortUpcomingList(upcomingSatList, mySat, payload, epochNow);
+  Serial.println("Update higher: ");
+  for(int i = 0; i < NUM_OF_SAT; i++){
+    Serial.println(upcomingSatList[i]);
+  }
+  delay(2000);
 }
 void goToSleep(unsigned int timeToSleep)
 {
