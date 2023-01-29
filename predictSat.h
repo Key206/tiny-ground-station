@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <Sgp4.h>
+#include "TLEFunction.h"
 
 #define GMT_OFFSET_SECOND           7
 #define DAYLIGHT_OFFSET_SECOND      25200
