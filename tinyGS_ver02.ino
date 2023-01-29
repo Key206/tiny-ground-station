@@ -1,7 +1,6 @@
 #include <WiFi.h>
 #include <NTPClient.h>
 #include <WiFiUdp.h>
-#include "tleFunction.h"
 #include "predictSat.h"
 #include "controlStepper.h"
 
