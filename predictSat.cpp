@@ -1,5 +1,4 @@
 #include "predictSat.h"
-#include "TLEFunction.h"
 
 void getEpochTimeNow(unsigned long& epochTime){
   struct tm timeinfo;
