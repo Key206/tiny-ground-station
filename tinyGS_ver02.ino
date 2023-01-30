@@ -1,7 +1,6 @@
 #include <WiFi.h>
 #include <NTPClient.h>
 #include <WiFiUdp.h>
-#include "predictSat.h"
 #include "controlStepper.h"
 
 #define SSID_WIFI                             "Thanh Tai"
@@ -58,7 +57,13 @@ void loop() {
   for(int i = 0; i < NUM_OF_SAT; i++){
     Serial.println(upcomingSatList[i]);
   }
-  delay(2000);
+  delay(1000);
+  initialize_Sat(upcomingSatList[0], mySat, payload);
+  Predict(mySat, epochNow);
+  unsigned long t = 1675085071;
+  mySat.findsat(t-20);
+  Serial.println(mySat.satVis);
+  delay(5000);
 }
 void goToSleep(unsigned int timeToSleep)
 {
