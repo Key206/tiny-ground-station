@@ -12,17 +12,36 @@ void rotateStepper(AccelStepper& mystepper,double Angle)
     mystepper.runSpeed();
   }
 } 
-void rotateInTrackingMode(AccelStepper& stepperAz, AccelStepper& stepperEl, Sgp4& satInfo, bool resetPre)
+void rotateInTrackingMode(AccelStepper& stepperAz, AccelStepper& stepperEl, Sgp4& satInfo, bool resetFlag)
 {
-  static double preDegree = 0;
-  double curDegree = satInfo.satAz;
-  double targetDegree = curDegree - preDegree;
-  if(targetDegree < -300){
-    targetDegree = (360 - preDegree + curDegree);
+  static double preDegreeAz = 0;
+  static double preDegreeEl = 0;
+  
+  double curDegreeAz = satInfo.satAz;
+  double curDegreeEl = satInfo.satEl;
+  
+  double targetDegreeAz = curDegreeAz - preDegreeAz;
+  double targetDegreeEl = curDegreeEl - preDegreeEl;
+  
+  if(targetDegreeAz < -CLOCKWISE_THRESHOLD){
+    targetDegreeAz = (360 - preDegreeAz + curDegreeAz);
   }
-  else if(targetDegree > 300){
-    targetDegree = -(360 - curDegree + preDegree);
+  else if(targetDegreeAz > CLOCKWISE_THRESHOLD){
+    targetDegreeAz = -(360 - curDegreeAz + preDegreeAz);
   }
-  rotateStepper(stepperAz, targetDegree); 
-  preDegree = (resetPre == false) ? curDegree : 0;
+  if(!resetFlag){
+    if(targetDegreeAz >= MIN_DEGREE_ROTATE || targetDegreeAz <= -MIN_DEGREE_ROTATE){
+      preDegreeAz = curDegreeAz;
+    }else{
+      return;
+    }
+  }else{
+    preDegreeAz = 0;
+    preDegreeEl = 0;
+    rotateStepper(stepperAz, -curDegreeAz);
+    rotateStepper(stepperEl, -curDegreeEl);
+    return;
+  }
+  rotateStepper(stepperEl, targetDegreeEl);
+  rotateStepper(stepperAz, targetDegreeAz); 
 }

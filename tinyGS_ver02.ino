@@ -30,6 +30,11 @@ void setup() {
   while (WiFi.status() != WL_CONNECTED);
   Serial.println("WiFi connected.");
   
+  motorAz.setMaxSpeed(1000);
+  motorAz.setAcceleration(1000);
+  motorEl.setMaxSpeed(1000);
+  motorEl.setAcceleration(1000);
+  
   configTime(GMT_OFFSET_SECOND, DAYLIGHT_OFFSET_SECOND, SERVER_NTP);
   getEpochTimeNow(epochNow);
   Serial.println(epochNow);
@@ -49,7 +54,7 @@ void setup() {
 
 void loop() {
   Serial.println("Hello world");
-  delay(3000);
+  delay(5000);
   getEpochTimeNow(epochNow);
   Serial.println(epochNow);
   sortUpcomingList(upcomingSatList, mySat, payload, epochNow);
@@ -57,13 +62,11 @@ void loop() {
   for(int i = 0; i < NUM_OF_SAT; i++){
     Serial.println(upcomingSatList[i]);
   }
-  delay(1000);
-  initialize_Sat(upcomingSatList[0], mySat, payload);
-  Predict(mySat, epochNow);
-  unsigned long t = 1675085071;
-  mySat.findsat(t-20);
-  Serial.println(mySat.satVis);
   delay(5000);
+  initialize_Sat(upcomingSatList[0], mySat, payload);
+  mySat.findsat(epochNow);
+  rotateInTrackingMode(motorAz, motorEl, mySat, false);
+  delay(20000);
 }
 void goToSleep(unsigned int timeToSleep)
 {
