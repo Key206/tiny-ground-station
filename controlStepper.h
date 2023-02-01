@@ -15,3 +15,4 @@
 void backRotateStepper(AccelStepper& mystepper, double Angle);
 void rotateStepper(AccelStepper& mystepper,double Angle);
 void rotateInTrackingMode(AccelStepper& stepperAz, AccelStepper& stepperEl, Sgp4& satInfo, bool resetFlag);
+bool rotateInBasicMode(AccelStepper& stepperAz, AccelStepper& stepperEl, Sgp4& satInfo, unsigned long t_now);

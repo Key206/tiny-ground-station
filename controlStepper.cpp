@@ -36,12 +36,27 @@ void rotateInTrackingMode(AccelStepper& stepperAz, AccelStepper& stepperEl, Sgp4
       return;
     }
   }else{
+    rotateStepper(stepperAz, -preDegreeAz);
+    rotateStepper(stepperEl, -preDegreeEl);
     preDegreeAz = 0;
     preDegreeEl = 0;
-    rotateStepper(stepperAz, -curDegreeAz);
-    rotateStepper(stepperEl, -curDegreeEl);
     return;
   }
   rotateStepper(stepperEl, targetDegreeEl);
   rotateStepper(stepperAz, targetDegreeAz); 
+}
+bool rotateInBasicMode(AccelStepper& stepperAz, AccelStepper& stepperEl, Sgp4& satInfo, unsigned long t_now)
+{
+  unsigned long t_max = Predict(satInfo, t_now);
+  if(t_max == 0){ // failed predict
+    return false;
+  }
+  satInfo.findsat(t_max);
+  
+  double targetDegreeEl = satInfo.satEl;
+  double targetDegreeAz = satInfo.satAz;
+  
+  rotateStepper(stepperEl, targetDegreeEl);
+  rotateStepper(stepperAz, targetDegreeAz);
+  return true;
 }

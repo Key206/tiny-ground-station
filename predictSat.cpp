@@ -52,15 +52,12 @@ unsigned long Predict(Sgp4& sat, unsigned long unix_t){
   bool nonError;
   nonError = sat.nextpass(&overpass,10);    
   if(nonError){ 
-    invjday(overpass.jdstop ,GMT_OFFSET_SECOND ,true , year, mon, day, hr, minute, sec);
-    Serial.println();
-    Serial.print("Stop: "); Serial.println(getUnixFromJulian(overpass.jdstop));
     invjday(overpass.jdmax ,GMT_OFFSET_SECOND ,true , year, mon, day, hr, minute, sec);
-    //Serial.println("Max: elev=" + String(overpass.maxelevation) + "° " + String(hr) + ':' + String(minute) + ':' + String(sec));
     unix_t = getUnixFromJulian(overpass.jdmax);
     return unix_t;
   }else{
     Serial.println("Prediction error");
+    return 0;
   }
 }
 void createUpcomingList(String* listUpcomingSat, Sgp4 sat, String payload, unsigned long unix_t)
