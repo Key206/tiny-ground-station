@@ -15,29 +15,20 @@ void beginLoRa(SX1278& radio)
   ModemInfo &m = status.modeminfo;
   int state = radio.begin(m.frequency, m.bw, m.sf, m.cr, m.sw, m.power, m.preambleLength, m.gain);
   if (state == RADIOLIB_ERR_NONE) {
-    Serial.println(F("success!"));
+    radio.setCRC(m.crc);
+    radio.forceLDRO(m.fldro);
+    if (radio.setCurrentLimit(120) == RADIOLIB_ERR_INVALID_CURRENT_LIMIT) {
+      Serial.println(F("Selected current limit is invalid for this module!"));
+    }
+    radio.setDio0Action(setFlag);
+    state = radio.startReceive();
+    if (state == RADIOLIB_ERR_NONE) {
+      return BEGIN_LORA_OK;
+    } else {
+      return BEGIN_LORA_FAULT;
+    }
   } else {
-    Serial.print(F("failed, code "));
-    Serial.println(state);
-    return;
-  }
-  radio.setCRC(m.crc);
-  radio.forceLDRO(m.fldro);
-  if (radio.setCurrentLimit(120) == RADIOLIB_ERR_INVALID_CURRENT_LIMIT) {
-    Serial.println(F("Selected current limit is invalid for this module!"));
-    //return;
-  }
-  radio.setDio0Action(setFlag);
-
-  // start listening for LoRa packets
-  Serial.print(F("[SX1278] Starting to listen ... "));
-  state = radio.startReceive();
-  if (state == RADIOLIB_ERR_NONE) {
-    Serial.println(F("success!"));
-  } else {
-    Serial.print(F("failed, code "));
-    Serial.println(state);
-    return;
+    return BEGIN_LORA_FAULT;
   }
 }
 
@@ -57,7 +48,7 @@ void listenRadio(SX1278& radio)
     status.lastPacketInfo.rssi = radio.getRSSI();
     status.lastPacketInfo.snr = radio.getSNR();
     status.lastPacketInfo.frequencyerror = radio.getFrequencyError();
-   
+    /* // debug 
     if (state == RADIOLIB_ERR_NONE) {
       // packet was successfully received
       Serial.println(F("[SX1278] Received packet!"));
@@ -93,10 +84,12 @@ void listenRadio(SX1278& radio)
       Serial.print(F("[SX1278] Failed, code "));
       Serial.println(state);
 
-    }
+    } */
     radio.startReceive();
     enableInterrupt = true;
-    String encoded = base64::encode(respFrame, respLen);
+    if(state == RADIOLIB_ERR_NONE){
+      String encoded = base64::encode(respFrame, respLen);
+    }
     delete[] respFrame;
   }
 } 
