@@ -97,5 +97,6 @@ void listenRadio(SX1278& radio)
     radio.startReceive();
     enableInterrupt = true;
     String encoded = base64::encode(respFrame, respLen);
+    delete[] respFrame;
   }
 } 
