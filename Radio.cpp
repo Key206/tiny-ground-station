@@ -10,7 +10,7 @@ void setFlag(void) {
   receivedFlag = true;
 }
 
-void beginLoRa(SX1278& radio)
+bool beginLoRa(SX1278& radio)
 {
   ModemInfo &m = status.modeminfo;
   int state = radio.begin(m.frequency, m.bw, m.sf, m.cr, m.sw, m.power, m.preambleLength, m.gain);
@@ -93,3 +93,14 @@ void listenRadio(SX1278& radio)
     delete[] respFrame;
   }
 } 
+void jsonMessageBuffer(String packet){
+  StaticJsonDocument<300> JSONbuffer;
+  JSONbuffer["satellite"] = status.modeminfo.satellite;
+  //JSONbuffer["coordinate"] = 1;
+  //JSONbuffer["distance"] = 5000;
+  JSONbuffer["packet"] = packet;
+  JSONbuffer["rssi"] = status.lastPacketInfo.rssi;
+  JSONbuffer["snr"] = status.lastPacketInfo.snr;
+  char JSONmessageBuffer[100]; // be careful the size of buffer
+  serializeJson(JSONbuffer, JSONmessageBuffer);
+}

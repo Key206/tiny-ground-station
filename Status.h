@@ -24,13 +24,13 @@ struct ModemInfo {
   bool    crc         = true;
   uint8_t fldro       = true;
   uint8_t gain        = 0;
-  uint32_t  NORAD     = 46494;  // funny this remember me WARGames
+  uint32_t  NORAD     = 46494;  
   uint8_t   fsw[8]    = {0,0,0,0,0,0,0,0};
   uint8_t   swSize     = 0;
   uint8_t   filter[8] = {0,0,0,0,0,0,0,0};
 };
 struct Status {
-  bool mqtt_connected = false;
+  //bool mqtt_connected = false;
   bool radio_ready = false;
   PacketInfo lastPacketInfo;
   ModemInfo modeminfo;
