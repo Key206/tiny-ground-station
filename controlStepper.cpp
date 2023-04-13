@@ -1,5 +1,33 @@
 #include "controlStepper.h"
 
+hw_timer_t *timer = NULL;
+
+void IRAM_ATTR stopPWM() {
+  ledcWrite(PWM1_CHANNEL, 0);
+  timerDetachInterrupt(timer);
+  timerEnd(timer);
+}
+void setupPWM(){
+  ledcAttachPin(STEP_AZ, PWM1_CHANNEL);
+  ledcAttachPin(STEP_EL, PWM1_CHANNEL);
+  ledcSetup(PWM1_CHANNEL, PWM1_FREQ, PWM1_RES);  
+}
+void rotateStepper(double Angle){
+  /*
+  if(Angle > 0){
+    digitalWrite(DIR, HIGH);
+  }else{
+    digitalWrite(DIR, LOW);
+    Angle = Angle * (-1);
+  }
+  */
+  timer = timerBegin(0, 80, true);
+  timerAttachInterrupt(timer, &stopPWM, true);
+  timerAlarmWrite(timer, (uint32_t)TIMER_INTERVAL_US*Angle/360, true);
+  ledcWrite(PWM1_CHANNEL, 50);
+  timerAlarmEnable(timer);
+}
+/*
 void rotateStepper(AccelStepper& mystepper,double Angle)
 {  
   int target = (STEP_ONE_TURN*(int)Angle/360);
@@ -60,3 +88,4 @@ bool rotateInBasicMode(AccelStepper& stepperAz, AccelStepper& stepperEl, Sgp4& s
   rotateStepper(stepperAz, targetDegreeAz);
   return true;
 }
+*/

@@ -1,4 +1,3 @@
-#include <Arduino.h>
 #include <HTTPClient.h>
 
 #define STEP_JUMP_TLE          140

@@ -7,11 +7,10 @@ void getEpochTimeNow(unsigned long& epochTime){
     Serial.println("Failed to obtain time");
     return;
   }
-  //Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
   Year = timeinfo.tm_year + 1900;
   Month = timeinfo.tm_mon + 1;
   Day = timeinfo.tm_mday;
-  Hour = timeinfo.tm_hour + 7;
+  Hour = timeinfo.tm_hour;
   Minute = timeinfo.tm_min;
   Second = timeinfo.tm_sec;
   epochTime = unixTimestamp(Year,Month,Day,Hour, Minute, Second) - DAYLIGHT_OFFSET_SECOND;
@@ -52,9 +51,15 @@ unsigned long Predict(Sgp4& sat, unsigned long unix_t){
   bool nonError;
   nonError = sat.nextpass(&overpass,10);    
   if(nonError){ 
+    invjday(overpass.jdstop ,GMT_OFFSET_SECOND ,true , year, mon, day, hr, minute, sec);
+    epochInfo.epochStop = getUnixFromJulian(overpass.jdstop);
+
     invjday(overpass.jdmax ,GMT_OFFSET_SECOND ,true , year, mon, day, hr, minute, sec);
-    unix_t = getUnixFromJulian(overpass.jdmax);
-    return unix_t;
+    epochInfo.epochMax = getUnixFromJulian(overpass.jdmax);
+    
+    invjday(overpass.jdstart ,GMT_OFFSET_SECOND ,true , year, mon, day, hr, minute, sec);
+    epochInfo.epochStart = getUnixFromJulian(overpass.jdstart);
+    return epochInfo.epochStart;
   }else{
     Serial.println("Prediction error");
     return 0;
@@ -62,13 +67,37 @@ unsigned long Predict(Sgp4& sat, unsigned long unix_t){
 }
 void createUpcomingList(String* listUpcomingSat, Sgp4 sat, String payload, unsigned long unix_t)
 {  
-  unsigned long* timeMaxElevationList = new unsigned long[NUM_OF_SAT];
-  for(uint8_t i = 0; i < NUM_OF_SAT; ++i){
+  uint8_t totalSat = getAmountOfSat(payload);
+  unsigned long* timeMaxElevationList = new unsigned long[totalSat];
+  for(uint8_t i = 0; i < totalSat; ++i){
     initialize_Sat(listUpcomingSat[i], sat, payload);
     timeMaxElevationList[i] = Predict(sat, unix_t);
   }
-  for(uint8_t i = 0; i < NUM_OF_SAT - 1; ++i){
-    for(uint8_t j = i + 1; j < NUM_OF_SAT; ++j){
+  for(uint8_t i = 0; i < totalSat - 1; ++i){
+    for(uint8_t j = i + 1; j < totalSat; ++j){
+      if(timeMaxElevationList[i] > timeMaxElevationList[j]){
+        String tmp_name = listUpcomingSat[i];
+        unsigned long tmp_t = timeMaxElevationList[i];
+        
+        listUpcomingSat[i] = listUpcomingSat[j];
+        timeMaxElevationList[i] = timeMaxElevationList[j];
+        
+        listUpcomingSat[j] = tmp_name;
+        timeMaxElevationList[j] = tmp_t; 
+      }
+    }
+  }
+  delete[] timeMaxElevationList;
+}
+void createUpcomingWantList(String* listUpcomingSat, Sgp4 sat, String payload, unsigned long unix_t)
+{  
+  unsigned long* timeMaxElevationList = new unsigned long[NUM_WANT_SAT];
+  for(uint8_t i = 0; i < NUM_WANT_SAT; ++i){
+    initialize_Sat(listUpcomingSat[i], sat, payload);
+    timeMaxElevationList[i] = Predict(sat, unix_t);
+  }
+  for(uint8_t i = 0; i < NUM_WANT_SAT - 1; ++i){
+    for(uint8_t j = i + 1; j < NUM_WANT_SAT; ++j){
       if(timeMaxElevationList[i] > timeMaxElevationList[j]){
         String tmp_name = listUpcomingSat[i];
         unsigned long tmp_t = timeMaxElevationList[i];
@@ -89,16 +118,16 @@ String getHigherSat(String* listUpcomingSat)
 }
 void sortUpcomingList(String* listUpcomingSat, Sgp4 sat, String payload, unsigned long unix_t)
 {
-  unsigned long* timeMaxElevationList = new unsigned long[NUM_OF_SAT];  
+  unsigned long* timeMaxElevationList = new unsigned long[NUM_WANT_SAT];  
   initialize_Sat(listUpcomingSat[0], sat, payload);
   unsigned long tmp_t = unix_t + PREDICT_OFFSET_SECOND;
   timeMaxElevationList[0] = Predict(sat, tmp_t);
-  for(uint8_t i = 1; i < NUM_OF_SAT; ++i){
+  for(uint8_t i = 1; i < NUM_WANT_SAT; ++i){
     initialize_Sat(listUpcomingSat[i], sat, payload);
     timeMaxElevationList[i] = Predict(sat, unix_t);
   }
   int j;
-  for (uint8_t i = 1; i < NUM_OF_SAT; ++i){
+  for (uint8_t i = 1; i < NUM_WANT_SAT; ++i){
     tmp_t = timeMaxElevationList[i];
     String tmp_name = listUpcomingSat[i];
     j = i - 1;

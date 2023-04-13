@@ -74,7 +74,8 @@ void getAllSatName(String* arraySatNames, String payload)
 {
   uint8_t element = 0;
   uint16_t indexStart, indexStop;
-  for(indexStart = 0; element < NUM_OF_SAT; ++indexStart){
+  uint8_t n = getAmountOfSat(payload);
+  for(indexStart = 0; element < n; ++indexStart){
     indexStop = indexStart;
     while(payload[indexStop] != '\n'){
       ++indexStop;

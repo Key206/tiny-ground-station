@@ -47,60 +47,28 @@ void listenRadio(SX1278& radio)
     state = radio.readData(respFrame, respLen);
     status.lastPacketInfo.rssi = radio.getRSSI();
     status.lastPacketInfo.snr = radio.getSNR();
-    status.lastPacketInfo.frequencyerror = radio.getFrequencyError();
-    /* // debug 
-    if (state == RADIOLIB_ERR_NONE) {
-      // packet was successfully received
-      Serial.println(F("[SX1278] Received packet!"));
-
-      // print data of the packet
-      Serial.print(F("[SX1278] Data:\t\t"));
-      for(int i = 0; i < respLen; i++){
-        Serial.print(*(respFrame+i));
-      }
-      Serial.println();
-
-      // print RSSI (Received Signal Strength Indicator)
-      Serial.print(F("[SX1278] RSSI:\t\t"));
-      Serial.print(status.lastPacketInfo.rssi);
-      Serial.println(F(" dBm"));
-
-      // print SNR (Signal-to-Noise Ratio)
-      Serial.print(F("[SX1278] SNR:\t\t"));
-      Serial.print(status.lastPacketInfo.snr);
-      Serial.println(F(" dB"));
-
-      // print frequency error
-      Serial.print(F("[SX1278] Frequency error:\t"));
-      Serial.print(status.lastPacketInfo.frequencyerror);
-      Serial.println(F(" Hz"));
-
-    } else if (state == RADIOLIB_ERR_CRC_MISMATCH) {
-      // packet was received, but is malformed
-      Serial.println(F("[SX1278] CRC error!"));
-
-    } else {
-      // some other error occurred
-      Serial.print(F("[SX1278] Failed, code "));
-      Serial.println(state);
-
-    } */
-    radio.startReceive();
-    enableInterrupt = true;
+    //status.lastPacketInfo.frequencyerror = radio.getFrequencyError();
+    Serial.println("received packet!!!");
     if(state == RADIOLIB_ERR_NONE){
       String encoded = base64::encode(respFrame, respLen);
+      status.lastPacketInfo.packet = encoded;
+      saveDataToSD(encoded);
     }
     delete[] respFrame;
+    enableInterrupt = true;
+    radio.startReceive();
   }
 } 
-void jsonMessageBuffer(String packet){
+void saveDataToSD(String packet){
   StaticJsonDocument<300> JSONbuffer;
+  //unsigned long epochtime = 0;
   JSONbuffer["satellite"] = status.modeminfo.satellite;
-  //JSONbuffer["coordinate"] = 1;
-  //JSONbuffer["distance"] = 5000;
+  //getEpochTimeNow(epochtime);
+ // JSONbuffer["epoch"] = epochtime;
   JSONbuffer["packet"] = packet;
   JSONbuffer["rssi"] = status.lastPacketInfo.rssi;
   JSONbuffer["snr"] = status.lastPacketInfo.snr;
-  char JSONmessageBuffer[100]; // be careful the size of buffer
+  char JSONmessageBuffer[300]; // be careful the size of buffer
   serializeJson(JSONbuffer, JSONmessageBuffer);
+  status.stateSD = appendFile(SD, "/LoRa.txt", JSONmessageBuffer);
 }
