@@ -10,8 +10,8 @@ void getEpochTimeNow(unsigned long& epochTime){
   Year = timeinfo.tm_year + 1900;
   Month = timeinfo.tm_mon + 1;
   Day = timeinfo.tm_mday;
-  Hour = timeinfo.tm_hour + 5;
-  Minute = timeinfo.tm_min + 24;
+  Hour = timeinfo.tm_hour;
+  Minute = timeinfo.tm_min;
   Second = timeinfo.tm_sec;
   epochTime = unixTimestamp(Year,Month,Day,Hour, Minute, Second) - DAYLIGHT_OFFSET_SECOND;
 }
