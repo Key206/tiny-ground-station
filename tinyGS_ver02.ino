@@ -3,6 +3,9 @@
 #include <WiFiUdp.h>
 #include "controlStepper.h"
 #include "Radio.h"
+#include <Firebase_ESP_Client.h>
+#include "addons/TokenHelper.h"
+#include "addons/RTDBHelper.h"
 
 #define SSID_WIFI                             "Thanh Tai"
 #define PASSWORD_WIFI                         "123456789"
@@ -13,6 +16,18 @@
 #define uS_TO_S_FACTOR                        1000000ULL  /* Conversion factor for micro seconds to seconds */
 #define TIME_PREPARE_AFTER_WAKEUP             20          /* in second */
 
+#define API_KEY                 "AIzaSyA7SwCrgGEMQWbH_J0mSVIN77O6N388p0g"
+#define DATABASE_URL            "https://thongletest-default-rtdb.asia-southeast1.firebasedatabase.app/"
+#define DATABASE_PATH           "/UsersData/packages"
+#define SAT_PATH                "/satellite"
+#define EPOCH_PATH              "/epoch";
+#define PACKET_PATH             "/packet";
+#define RSSI_PATH               "/rssi";
+#define SNR_PATH                "/snr";
+#define LON_PATH                "/longitude";
+#define LAT_PATH                "/latitude";
+#define TIMESTAMP_PATH          "/timestamp";
+
 Sgp4 mySat;
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP);
@@ -22,9 +37,6 @@ Status status;
 SX1278 radio = new Module(5, 4, 27, 17);
 
 String orderSatList[4] = {"Norbi", "FossaSat-2E8", "FossaSat-2E11", "FossaSat-2E12"};
-float paramsNorbi[4] = {436.703, 250, 10, 5};
-float paramsFossa[4] = {401.7, 125, 11, 8}; 
-float paramsGaoFen[4] = {400.45, 500, 9, 5};
 
 String payload;
 unsigned long epochNow = 1660138928;
@@ -78,28 +90,7 @@ void loop() {
   }
 }
 
-void configParamsLoRa(Status& param, SX1278& myRadio, String orderSat){
-  if(orderSat[0] == 'N'){
-    param.modeminfo.satellite = "Norbi"; 
-    initLoRa(param, paramsNorbi,myRadio);
-  }else if(orderSat[0] == 'F'){
-    param.modeminfo.satellite = orderSat;
-    initLoRa(param, paramsFossa,myRadio);
-  }else{
-    param.modeminfo.satellite = "GeoFen";
-    initLoRa(param, paramsGaoFen,myRadio);
-  }
-}
-void initLoRa(Status& param, float* arr, SX1278& myRadio){
-  param.modeminfo.frequency = arr[0]; 
-  param.modeminfo.bw = arr[1];
-  param.modeminfo.sf = arr[2];
-  param.modeminfo.cr = arr[3];
-  param.stateLoRa = beginLoRa(myRadio);
-  if(!param.stateLoRa){
-    Serial.println("Fail");
-  }
-}
+
 void goToSleep(unsigned int timeToSleep)
 {
   esp_sleep_enable_timer_wakeup(timeToSleep * uS_TO_S_FACTOR);

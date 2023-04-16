@@ -1,5 +1,9 @@
 #include "Radio.h"
 
+float paramsNorbi[4] = {436.703, 250, 10, 5};
+float paramsFossa[4] = {401.7, 125, 11, 8}; 
+float paramsGaoFen[4] = {400.45, 500, 9, 5};
+
 volatile bool receivedFlag = false;
 volatile bool enableInterrupt = true;
 
@@ -71,4 +75,26 @@ void saveDataToSD(String packet){
   char JSONmessageBuffer[300]; // be careful the size of buffer
   serializeJson(JSONbuffer, JSONmessageBuffer);
   status.stateSD = appendFile(SD, "/LoRa.txt", JSONmessageBuffer);
+}
+void configParamsLoRa(Status& param, SX1278& myRadio, String orderSat){
+  if(orderSat[0] == 'N'){
+    param.modeminfo.satellite = "Norbi"; 
+    initLoRa(param, paramsNorbi,myRadio);
+  }else if(orderSat[0] == 'F'){
+    param.modeminfo.satellite = orderSat;
+    initLoRa(param, paramsFossa,myRadio);
+  }else{
+    param.modeminfo.satellite = "GeoFen";
+    initLoRa(param, paramsGaoFen,myRadio);
+  }
+}
+void initLoRa(Status& param, float* arr, SX1278& myRadio){
+  param.modeminfo.frequency = arr[0]; 
+  param.modeminfo.bw = arr[1];
+  param.modeminfo.sf = arr[2];
+  param.modeminfo.cr = arr[3];
+  param.stateLoRa = beginLoRa(myRadio);
+  if(!param.stateLoRa){
+    Serial.println("Fail");
+  }
 }
