@@ -48,11 +48,11 @@ void listenRadio(SX1278& radio)
     status.lastPacketInfo.rssi = radio.getRSSI();
     status.lastPacketInfo.snr = radio.getSNR();
     //status.lastPacketInfo.frequencyerror = radio.getFrequencyError();
-    Serial.println("received packet!!!");
+    Serial.println("received");
     if(state == RADIOLIB_ERR_NONE){
       String encoded = base64::encode(respFrame, respLen);
       status.lastPacketInfo.packet = encoded;
-      saveDataToSD(encoded);
+      //saveDataToSD(encoded);
     }
     delete[] respFrame;
     enableInterrupt = true;

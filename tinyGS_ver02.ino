@@ -21,30 +21,21 @@ timeInfoSat epochInfo;
 Status status;
 SX1278 radio = new Module(5, 4, 27, 17);
 
-//AccelStepper motorAz(MOTOR_INTERFACE_TYPE, STEP_AZ, DIR_AZ);
-//AccelStepper motorEl(MOTOR_INTERFACE_TYPE, STEP_EL, DIR_EL);
-
-String listWantSat[6] = {"Norbi", "FossaSat-2E8", "GaoFen-7", "GaoFen-13", "GaoFen-17", "GaoFen-19"};
+String orderSatList[4] = {"Norbi", "FossaSat-2E8", "FossaSat-2E11", "FossaSat-2E12"};
 float paramsNorbi[4] = {436.703, 250, 10, 5};
-float paramsFossa8[4] = {401.7, 125, 11, 8}; 
+float paramsFossa[4] = {401.7, 125, 11, 8}; 
 float paramsGaoFen[4] = {400.45, 500, 9, 5};
 
 String payload;
 unsigned long epochNow = 1660138928;
 String* upcomingSatList;
+uint8_t totalSat = 0;
 
 void setup() {
   Serial.begin(9600);
   WiFi.begin(SSID_WIFI, PASSWORD_WIFI);
   while (WiFi.status() != WL_CONNECTED);
   Serial.println("WiFi connected.");
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
-  
-  //motorAz.setMaxSpeed(1000);
-  //motorAz.setAcceleration(1000);
-  //motorEl.setMaxSpeed(1000);
-  //motorEl.setAcceleration(1000);
   
   configTime(GMT_OFFSET_SECOND, DAYLIGHT_OFFSET_SECOND, SERVER_NTP);
   getEpochTimeNow(epochNow);
@@ -52,55 +43,50 @@ void setup() {
   
   updateTleData(&http, payload, SERVER_TLE_TINYGS);
   mySat.site(10.954,106.852,18);
-  
-  upcomingSatList = new String[NUM_OF_SAT];
+
+  totalSat = NUM_ORDER_SAT;
+  createUpcomingOrderList(orderSatList, mySat, payload);
+  /*
+  totalSat = getAmountOfSat(payload);
+  upcomingSatList = new String[totalSat];
   getAllSatName(upcomingSatList, payload);
-  createUpcomingList(upcomingSatList, mySat, payload, epochNow);
-  for(int i = 0; i < NUM_OF_SAT; i++){
+  createUpcomingList(upcomingSatList, mySat, payload);
+  for(int i = 0; i < totalSat; i++){
     Serial.println(upcomingSatList[i]);
   }
   Serial.print("Higher: "); Serial.println(getHigherSat(upcomingSatList));
-  delay(5000);
-  //INIT SD CARD
-  status.stateSD = initSDCard();
-  File file = SD.open("/LoRa.txt");
-  if(!file) {
-    Serial.println("File doesn't exist");
-    Serial.println("Creating file...");
-    writeFile(SD, "/LoRa.txt", "JSON message \r\n");
-  }
-  else {
-    Serial.println("File already exists");  
-  }
-  file.close();
-  
+  */
 }
 void loop() {
-  Serial.println("Hello world");
-  delay(5000);
+  listenRadio(radio);
   getEpochTimeNow(epochNow);
-  Serial.println(epochNow);
-  sortUpcomingList(upcomingSatList, mySat, payload, epochNow);
-  Serial.println("Update higher: ");
-  for(int i = 0; i < NUM_OF_SAT; i++){
-    Serial.println(upcomingSatList[i]);
+  initialize_Sat(orderSatList[0], mySat, payload);
+  status.statePredict = Predict(mySat, epochNow);
+  if(epochInfo.epochStart - TIME_PREPARE_AFTER_WAKEUP > epochNow){
+    configParamsLoRa(status, radio, "GeoFen");
+    unsigned long epochStart = epochInfo.epochStart - TIME_PREPARE_AFTER_WAKEUP;
+    while(epochStart > epochNow){
+      listenRadio(radio);
+      getEpochTimeNow(epochNow);
+    }
+  }else{
+    configParamsLoRa(status, radio, orderSatList[0]);
+    while(epochNow <= epochInfo.epochStop){
+      listenRadio(radio);
+      getEpochTimeNow(epochNow);
+    }
   }
-  delay(5000);
-  initialize_Sat(upcomingSatList[0], mySat, payload);
-  mySat.findsat(epochNow);
-  //rotateInTrackingMode(motorAz, motorEl, mySat, false);
-  delay(20000);
 }
 
-void configParamsLoRa(Status& param, SX1278& myRadio, String* wantList){
-  if(wantList[0] == "Norbi"){
+void configParamsLoRa(Status& param, SX1278& myRadio, String orderSat){
+  if(orderSat[0] == 'N'){
     param.modeminfo.satellite = "Norbi"; 
     initLoRa(param, paramsNorbi,myRadio);
-  }else if(wantList[0] == "FossaSat-2E8"){
-    param.modeminfo.satellite = "FossaSat-2E8";
-    initLoRa(param, paramsFossa8,myRadio);
+  }else if(orderSat[0] == 'F'){
+    param.modeminfo.satellite = orderSat;
+    initLoRa(param, paramsFossa,myRadio);
   }else{
-    param.modeminfo.satellite = wantList[0];
+    param.modeminfo.satellite = "GeoFen";
     initLoRa(param, paramsGaoFen,myRadio);
   }
 }
@@ -111,7 +97,7 @@ void initLoRa(Status& param, float* arr, SX1278& myRadio){
   param.modeminfo.cr = arr[3];
   param.stateLoRa = beginLoRa(myRadio);
   if(!param.stateLoRa){
-    Serial.println("deo!");
+    Serial.println("Fail");
   }
 }
 void goToSleep(unsigned int timeToSleep)
