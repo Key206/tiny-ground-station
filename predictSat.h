@@ -1,6 +1,6 @@
 #include <Sgp4.h>
 #include "tleFunction.h"
-
+#define _PREDICT_
 #define GMT_OFFSET_SECOND           7
 #define DAYLIGHT_OFFSET_SECOND      25200
 #define PREDICT_OFFSET_SECOND       600

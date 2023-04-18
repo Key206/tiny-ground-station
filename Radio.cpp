@@ -1,4 +1,13 @@
 #include "Radio.h"
+#include <Firebase_ESP_Client.h>
+#include "addons/TokenHelper.h"
+#include "addons/RTDBHelper.h"
+
+FirebaseData fbdo;
+FirebaseAuth auth;
+FirebaseConfig config;
+bool signupOK = false;
+FirebaseJson json;
 
 float paramsNorbi[4] = {436.703, 250, 10, 5};
 float paramsFossa[4] = {401.7, 125, 11, 8}; 
@@ -51,11 +60,17 @@ void listenRadio(SX1278& radio)
     state = radio.readData(respFrame, respLen);
     status.lastPacketInfo.rssi = radio.getRSSI();
     status.lastPacketInfo.snr = radio.getSNR();
-    //status.lastPacketInfo.frequencyerror = radio.getFrequencyError();
+    status.lastPacketInfo.id += 1;
+    unsigned long unixt = 0;
+    getEpochTimeNow(unixt);
+    mySat.findsat(unixt);
+    status.lastPacketInfo.lat = mySat.satLat;
+    status.lastPacketInfo.lon = mySat.satLon;
     Serial.println("received");
     if(state == RADIOLIB_ERR_NONE){
       String encoded = base64::encode(respFrame, respLen);
       status.lastPacketInfo.packet = encoded;
+      sendPacketToDatabase();
       //saveDataToSD(encoded);
     }
     delete[] respFrame;
@@ -95,6 +110,42 @@ void initLoRa(Status& param, float* arr, SX1278& myRadio){
   param.modeminfo.cr = arr[3];
   param.stateLoRa = beginLoRa(myRadio);
   if(!param.stateLoRa){
-    Serial.println("Fail");
+    Serial.println("Fail init LoRa");
   }
+}
+bool initFirebase()
+{
+  config.api_key = API_KEY;
+  config.database_url = DATABASE_URL;
+  if (Firebase.signUp(&config, &auth, "", "")){
+    signupOK = true;
+  }
+  else{
+    //Serial.printf("%s\n", config.signer.signupError.message.c_str());
+    return false;
+  }
+  // Assign the callback function for the long running token generation task */
+  config.token_status_callback = tokenStatusCallback; 
+  // Initialize the library with the Firebase authen and config
+  Firebase.begin(&config, &auth);
+  return true;
+}
+bool sendPacketToDatabase()
+{
+  if(Firebase.ready() && signupOK){
+    unsigned long unixt = 0;
+    getEpochTimeNow(unixt);
+    json.set(SAT_PATH, status.modeminfo.satellite);
+    json.set(EPOCH_PATH, String(unixt));
+    json.set(PACKET_PATH, String(status.lastPacketInfo.packet));
+    json.set(RSSI_PATH, String(status.lastPacketInfo.rssi));
+    json.set(SNR_PATH, String(status.lastPacketInfo.snr));
+    json.set(LON_PATH, String(status.lastPacketInfo.lon));
+    json.set(LAT_PATH, String(status.lastPacketInfo.lat));
+    String databasePath = "/UsersData/packages";
+    String parentPath = databasePath + "/" + String(status.lastPacketInfo.id);
+    if (fbdo.errorReason().c_str() != "connection lost"){
+      return (Firebase.RTDB.setJSON(&fbdo, parentPath.c_str(), &json) ? true : false);
+    }
+  }  
 }

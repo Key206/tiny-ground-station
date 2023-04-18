@@ -1,9 +1,9 @@
 struct PacketInfo {
-  //String time = "Waiting";
   String packet = "Empty";
+  double lat = 0, lon = 0;
+  uint16_t id = 0;
   float rssi = 0;
   float snr = 0;
-  //float frequencyerror = 0;    // Hz 
   bool crc_error = false;
 };
 
