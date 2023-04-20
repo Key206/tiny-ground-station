@@ -133,13 +133,11 @@ bool initFirebase()
 bool sendPacketToDatabase()
 {
   if(Firebase.ready() && signupOK){
-    unsigned long unixt = 0;
-    getEpochTimeNow(unixt);
     json.set(SAT_PATH, status.modeminfo.satellite);
-    json.set(EPOCH_PATH, String(unixt));
-    json.set(PACKET_PATH, String(status.lastPacketInfo.packet));
+    json.set(EPOCH_PATH, getTimeDate());
     json.set(RSSI_PATH, String(status.lastPacketInfo.rssi));
     json.set(SNR_PATH, String(status.lastPacketInfo.snr));
+    json.set(PACKET_PATH, String(status.lastPacketInfo.packet));
     json.set(LON_PATH, String(status.lastPacketInfo.lon));
     json.set(LAT_PATH, String(status.lastPacketInfo.lat));
     String databasePath = "/UsersData/packages";

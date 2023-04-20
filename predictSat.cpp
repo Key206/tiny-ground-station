@@ -15,6 +15,18 @@ void getEpochTimeNow(unsigned long& epochTime){
   Second = timeinfo.tm_sec;
   epochTime = unixTimestamp(Year,Month,Day,Hour, Minute, Second) - DAYLIGHT_OFFSET_SECOND;
 }
+String getTimeDate(){
+  struct tm timeinfo;
+  int Year, Month;
+  if(!getLocalTime(&timeinfo)){
+    Serial.println("Failed to obtain time");
+    return String(0);
+  }
+  Year = timeinfo.tm_year + 1900;
+  Month = timeinfo.tm_mon + 1;
+  String timeDate = String(timeinfo.tm_mday)+"-"+String(Month)+"-"+String(Year)+" "+String(timeinfo.tm_hour)+":"+String(timeinfo.tm_min);
+  return timeDate; 
+}
 void updateEpochTimeNow(const char* ntpServerName, unsigned long& epochTime)
 {
   configTime(7, 25200, ntpServerName);

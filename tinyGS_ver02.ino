@@ -4,8 +4,8 @@
 #include "controlStepper.h"
 #include "Radio.h"
 
-#define SSID_WIFI                             "Thanh Tai"
-#define PASSWORD_WIFI                         "123456789"
+#define SSID_WIFI                             "RFThings Vietnam"
+#define PASSWORD_WIFI                         "khongvaoduoc!"
 
 #define SERVER_TLE_TINYGS                     "https://api.tinygs.com/v1/tinygs_supported.txt"
 #define SERVER_NTP                            "pool.ntp.org"
