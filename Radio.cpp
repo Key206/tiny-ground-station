@@ -92,15 +92,15 @@ void saveDataToSD(String packet){
   status.stateSD = appendFile(SD, "/LoRa.txt", JSONmessageBuffer);
 }
 void configParamsLoRa(Status& param, SX1278& myRadio, String orderSat){
-  if(orderSat[0] == 'N'){
-    param.modeminfo.satellite = "Norbi"; 
-    initLoRa(param, paramsNorbi,myRadio);
+  if(orderSat[0] == 'G'){
+    param.modeminfo.satellite = orderSat;
+    initLoRa(param, paramsGaoFen,myRadio);
   }else if(orderSat[0] == 'F'){
     param.modeminfo.satellite = orderSat;
     initLoRa(param, paramsFossa,myRadio);
   }else{
-    param.modeminfo.satellite = "GeoFen";
-    initLoRa(param, paramsGaoFen,myRadio);
+    param.modeminfo.satellite = "Norbi"; 
+    initLoRa(param, paramsNorbi,myRadio);
   }
 }
 void initLoRa(Status& param, float* arr, SX1278& myRadio){

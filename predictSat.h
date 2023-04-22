@@ -4,7 +4,7 @@
 #define GMT_OFFSET_SECOND           7
 #define DAYLIGHT_OFFSET_SECOND      25200
 #define PREDICT_OFFSET_SECOND       600
-#define NUM_ORDER_SAT               4
+#define NUM_ORDER_SAT               8
 #define FAIL_CODE                   0
 #define SUCCESS_CODE                1
 

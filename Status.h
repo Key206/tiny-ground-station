@@ -6,7 +6,6 @@ struct PacketInfo {
   float snr = 0;
   bool crc_error = false;
 };
-
 struct ModemInfo {
   String satellite  = "GaoFen";
   String  modem_mode  = "LoRa" ;     // 1-LoRa  2-FSK  3-GMSK

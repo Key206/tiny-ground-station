@@ -4,10 +4,10 @@
 #include "controlStepper.h"
 #include "Radio.h"
 
-#define SSID_WIFI                             "RFThings Vietnam"
-#define PASSWORD_WIFI                         "khongvaoduoc!"
+#define SSID_WIFI                             "Thanh Tai"
+#define PASSWORD_WIFI                         "123456789"
 
-#define SERVER_TLE_TINYGS                     "https://api.tinygs.com/v1/tinygs_supported.txt"
+#define URL_TLE_TINYGS                     "https://api.tinygs.com/v1/tinygs_supported.txt"
 #define SERVER_NTP                            "pool.ntp.org"
 
 #define uS_TO_S_FACTOR                        1000000ULL  /* Conversion factor for micro seconds to seconds */
@@ -17,12 +17,11 @@
 Sgp4 mySat;
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP);
-HTTPClient http;
 timeInfoSat epochInfo;
 Status status;
 SX1278 radio = new Module(5, 4, 27, 17);
 /* Create order sat list */
-String orderSatList[4] = {"Norbi", "FossaSat-2E8", "FossaSat-2E11", "FossaSat-2E12"};
+String orderSatList[8] = {"Norbi", "FossaSat-2E8", "FossaSat-2E11", "FossaSat-2E12", "GaoFen-7", "GaoFen-13", "GaoFen-19", "GaoFen-17"};
 /* Create global variables */
 String payload;
 unsigned long epochNow = 1660138928;
@@ -39,7 +38,7 @@ void setup() {
   getEpochTimeNow(epochNow);
   Serial.println(epochNow);
   
-  updateTleData(&http, payload, SERVER_TLE_TINYGS);
+  updateTleData(payload, URL_TLE_TINYGS);
   mySat.site(10.954,106.852,18);
   totalSat = NUM_ORDER_SAT;
   createUpcomingOrderList(orderSatList, mySat, payload);
@@ -51,30 +50,28 @@ void loop(){
   initialize_Sat(orderSatList[0], mySat, payload);
   status.statePredict = Predict(mySat, epochNow);
   if(epochInfo.epochStart - TIME_PREPARE_AFTER_WAKEUP > epochNow){
-    configParamsLoRa(status, radio, "GeoFen");
-    unsigned long epochStart = epochInfo.epochStart - TIME_PREPARE_AFTER_WAKEUP;
-    while(epochStart > epochNow){
-      listenRadio(radio);
-      getEpochTimeNow(epochNow);
-    }
+    uint64_t timeToSleep = calculateSleepTime(epochNow, epochInfo.epochStart);
+    goToSleep(timeToSleep);
   }else{
     configParamsLoRa(status, radio, orderSatList[0]);
     while(epochNow <= epochInfo.epochStop){
       listenRadio(radio);
       getEpochTimeNow(epochNow);
     }
+    updateTleData(payload, URL_TLE_TINYGS);
     sortUpcomingList(orderSatList, mySat, payload, totalSat);
   }
 }
 
-void goToSleep(unsigned int timeToSleep)
+void goToSleep(uint64_t timeToSleep)
 {
   esp_sleep_enable_timer_wakeup(timeToSleep * uS_TO_S_FACTOR);
   Serial.println("Going to sleep now");
+  Serial.println(timeToSleep * uS_TO_S_FACTOR);
   Serial.flush(); 
   esp_deep_sleep_start();
 }
-unsigned int calculateSleepTime(unsigned long Now, unsigned long Start)
+uint64_t calculateSleepTime(unsigned long Now, unsigned long Start)
 {
-  return (unsigned int)(Start - Now - TIME_PREPARE_AFTER_WAKEUP);
+  return (uint64_t)(Start - Now - TIME_PREPARE_AFTER_WAKEUP);
 }

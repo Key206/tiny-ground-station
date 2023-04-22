@@ -1,18 +1,20 @@
 #include "TLEFunction.h"
 
 
-void updateTleData(HTTPClient* http, String& payload, String serverName)
+void updateTleData(String& payload, String serverName)
 {
   uint8_t httpResponseCode = 0;
-  http->begin(serverName);
-  httpResponseCode = http->GET(); 
+  HTTPClient http;
+  http.begin(serverName);
+  httpResponseCode = http.GET(); 
   if(httpResponseCode > 0){
-    payload = http->getString();
+    payload = http.getString();
   }
   else{
     Serial.println(httpResponseCode);
     Serial.println("Fail to get TLE!!!");
   }
+  http.end();
 }
 bool checkNameSat(String nameSat, String payload, uint16_t& posStartTLEsLine1){
   String tempName;
