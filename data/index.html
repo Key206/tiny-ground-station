@@ -1,0 +1,63 @@
+<!DOCTYPE HTML><html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>TinyGS RFThings</title>
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      text-align: center;
+    }
+    header {
+      margin: 0;
+      padding-top: 5vh;
+      padding-bottom: 5vh;
+      overflow: hidden;
+      background-image: url(winter);
+      background-size: cover;
+      color: white;
+    }
+    h2 {
+      font-size: 2.0rem;
+    }
+    p { font-size: 1.2rem; }
+    .units { font-size: 1.2rem; }
+    .readings { font-size: 2.0rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h2>TinyGS RFThings</h2>
+    <p><strong>Last received packet:<br/><span id="packet">%PACKET%</span></strong></p>
+    <p>RSSI: <span id="rssi">%RSSI%</span></p>
+  </header>
+<main>
+	<h2>Status Station</h2>
+    <p>LoRa: <span id="checkLoRa">%LORA%</span></p>
+	<p>SD: <span id="checkSD">%SD%</span></p>
+	<p>Predict Sat: <span id="checkPredict">%PREDICT%</span></p>
+	<p>Epoch Start: <span id="checkEpoch">%EPOCH%</span></p>
+</main>
+<script>
+setInterval(updateValues, 10000, "rssi");
+setInterval(updateValues, 10000, "packet");
+setInterval(updateValues, 10000, "checkLoRa");
+setInterval(updateValues, 10000, "checkSD");
+setInterval(updateValues, 10000, "checkPredict");
+setInterval(updateValues, 10000, "checkEpoch");
+
+function updateValues(value) {
+  var xhttp = new XMLHttpRequest();
+  xhttp.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+      document.getElementById(value).innerHTML = this.responseText;
+    }
+  };
+  xhttp.open("GET", "/" + value, true);
+  xhttp.send();
+}
+</script>
+</body>
+</html>

@@ -12,7 +12,6 @@
 
 #define API_KEY                 "AIzaSyA7SwCrgGEMQWbH_J0mSVIN77O6N388p0g"
 #define DATABASE_URL            "https://thongletest-default-rtdb.asia-southeast1.firebasedatabase.app/"
-#define DATABASE_PATH           "/UsersData/packages"
 #define SAT_PATH                "/satellite"
 #define EPOCH_PATH              "/epoch"
 #define PACKET_PATH             "/packet"
