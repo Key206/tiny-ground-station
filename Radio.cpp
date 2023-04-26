@@ -60,7 +60,11 @@ void listenRadio(SX1278& radio)
     state = radio.readData(respFrame, respLen);
     status.lastPacketInfo.rssi = radio.getRSSI();
     status.lastPacketInfo.snr = radio.getSNR();
+    
     status.lastPacketInfo.id += 1;
+    EEPROM.write(ADDR_ID_EEPROM, status.lastPacketInfo.id);
+    EEPROM.commit();
+    
     unsigned long unixt = 0;
     getEpochTimeNow(unixt);
     mySat.findsat(unixt);

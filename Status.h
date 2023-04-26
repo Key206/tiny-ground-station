@@ -1,7 +1,7 @@
 struct PacketInfo {
   String packet = "Empty";
   double lat = 0, lon = 0;
-  uint16_t id = 0;
+  uint8_t id = -1;
   float rssi = 0;
   float snr = 0;
   bool crc_error = false;

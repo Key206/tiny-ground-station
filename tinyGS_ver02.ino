@@ -13,7 +13,8 @@
 #define SERVER_NTP                            "pool.ntp.org"
 
 #define uS_TO_S_FACTOR                        1000000ULL  /* Conversion factor for micro seconds to seconds */
-#define TIME_PREPARE_AFTER_WAKEUP             20          /* in second */
+#define TIME_PREPARE_AFTER_WAKEUP             10          /* in second */
+#define TIME_ACCEPT_PASS_LISTEN               5          /* in second */
 
 /* Create OBJ use for prediction, LoRa, epoch time */
 Sgp4 mySat;
@@ -28,8 +29,9 @@ String orderSatList[8] = {"Norbi", "FossaSat-2E8", "FossaSat-2E11", "FossaSat-2E
 /* Create global variables */
 String payload;
 unsigned long epochNow = 1660138928;
-String* upcomingSatList;
+//String* upcomingSatList;
 uint8_t totalSat = 0;
+uint8_t posInList = 0;
 
 void setup() {
   Serial.begin(9600);
@@ -48,6 +50,10 @@ void setup() {
   totalSat = NUM_ORDER_SAT;
   createUpcomingOrderList(orderSatList, mySat, payload);
   
+  EEPROM.begin(EEPROM_SIZE);
+  if((EEPROM.read(ADDR_ID_EEPROM) > 0) && (EEPROM.read(ADDR_ID_EEPROM) < 255)){
+    status.lastPacketInfo.id = EEPROM.read(ADDR_ID_EEPROM);
+  }
   initFirebase();
 
   if(!SPIFFS.begin()){
@@ -62,14 +68,14 @@ void setup() {
 void loop(){
   getEpochTimeNow(epochNow);
   Serial.print("now: "); Serial.println(epochNow);
-  initialize_Sat(orderSatList[0], mySat, payload);
+  initialize_Sat(orderSatList[posInList], mySat, payload);
   status.statePredict = Predict(mySat, epochNow);
   if(epochInfo.epochStart - TIME_PREPARE_AFTER_WAKEUP > epochNow){
     uint64_t timeToSleep = calculateSleepTime(epochNow, epochInfo.epochStart);
     goToSleep(timeToSleep);
-  }else{
-    Serial.print("Sat listen: "); Serial.println(orderSatList[0]);
-    configParamsLoRa(status, radio, orderSatList[0]);
+  }else if(epochNow < epochInfo.epochStop){
+    Serial.print("Sat listen: "); Serial.println(orderSatList[posInList]);
+    configParamsLoRa(status, radio, orderSatList[posInList]);
     while(epochNow <= epochInfo.epochStop){
       listenRadio(radio);
       getEpochTimeNow(epochNow);
@@ -77,6 +83,9 @@ void loop(){
     Serial.println("update TLE");
     updateTleData(payload, URL_TLE_TINYGS);
     sortUpcomingList(orderSatList, mySat, payload, totalSat);
+    posInList = 0;
+  }else{
+    ++posInList;
   }
 }
 
