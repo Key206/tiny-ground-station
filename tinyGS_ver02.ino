@@ -6,8 +6,8 @@
 #include "ESPAsyncWebServer.h"
 #include <SPIFFS.h>
 
-#define SSID_WIFI                             "RFThings Vietnam"
-#define PASSWORD_WIFI                         "khongvaoduoc!"
+#define SSID_WIFI                             "Thanh Tai"
+#define PASSWORD_WIFI                         "123456789"
 
 #define URL_TLE_TINYGS                        "https://api.tinygs.com/v1/tinygs_supported.txt"
 #define SERVER_NTP                            "pool.ntp.org"
@@ -48,37 +48,22 @@ void setup() {
   Serial.println(epochNow);
   
   updateTleData(payload, URL_TLE_TINYGS);
-  Serial.println("Check 1");
   mySat.site(10.954,106.852,18);
   totalSat = NUM_ORDER_SAT;
   createUpcomingOrderList(orderSatList, mySat, payload);
-  Serial.println("Check 2");
   
   EEPROM.begin(EEPROM_SIZE);
   if((EEPROM.read(ADDR_ID_EEPROM) > 0) && (EEPROM.read(ADDR_ID_EEPROM) < 255)){
     status.lastPacketInfo.id = EEPROM.read(ADDR_ID_EEPROM);
   }
-  Serial.println("Check 3");
   initFirebase();
-  Serial.println("Check 4");
   if(!SPIFFS.begin()){
     Serial.println("An Error has occurred while mounting SPIFFS");
     return;
   }
   createWebPage();
   server.begin();
-  Serial.println("Check 5");
   status.stateSD = initSDCard();
-  File file = SD.open("/LoRa.txt");
-  if(!file) {
-    Serial.println("File doesn't exist");
-    Serial.println("Creating file...");
-    writeFile(SD, "/alo.txt", "JSON message \r\n");
-  }
-  else {
-    Serial.println("File already exists");  
-  }
-  file.close();
 }
 void loop(){
   getEpochTimeNow(epochNow);

@@ -75,7 +75,7 @@ void listenRadio(SX1278& radio)
       String encoded = base64::encode(respFrame, respLen);
       status.lastPacketInfo.packet = encoded;
       sendPacketToDatabase();
-      //saveDataToSD(encoded);
+      saveDataToSD(encoded);
     }
     delete[] respFrame;
     enableInterrupt = true;
@@ -84,10 +84,8 @@ void listenRadio(SX1278& radio)
 } 
 void saveDataToSD(String packet){
   StaticJsonDocument<300> JSONbuffer;
-  //unsigned long epochtime = 0;
   JSONbuffer["satellite"] = status.modeminfo.satellite;
-  //getEpochTimeNow(epochtime);
- // JSONbuffer["epoch"] = epochtime;
+  JSONbuffer["date"] = getTimeDate();
   JSONbuffer["packet"] = packet;
   JSONbuffer["rssi"] = status.lastPacketInfo.rssi;
   JSONbuffer["snr"] = status.lastPacketInfo.snr;
