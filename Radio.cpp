@@ -70,8 +70,8 @@ void listenRadio(SX1278& radio)
     mySat.findsat(unixt);
     status.lastPacketInfo.lat = mySat.satLat;
     status.lastPacketInfo.lon = mySat.satLon;
-    Serial.println("received");
     if(state == RADIOLIB_ERR_NONE){
+      Serial.println("sended");
       String encoded = base64::encode(respFrame, respLen);
       status.lastPacketInfo.packet = encoded;
       sendPacketToDatabase();

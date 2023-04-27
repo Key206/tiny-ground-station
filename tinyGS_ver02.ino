@@ -6,8 +6,8 @@
 #include "ESPAsyncWebServer.h"
 #include <SPIFFS.h>
 
-#define SSID_WIFI                             "Thanh Tai"
-#define PASSWORD_WIFI                         "123456789"
+#define SSID_WIFI                             "RFThings Vietnam"
+#define PASSWORD_WIFI                         "khongvaoduoc!"
 
 #define URL_TLE_TINYGS                        "https://api.tinygs.com/v1/tinygs_supported.txt"
 #define SERVER_NTP                            "pool.ntp.org"
@@ -15,6 +15,8 @@
 #define uS_TO_S_FACTOR                        1000000ULL  /* Conversion factor for micro seconds to seconds */
 #define TIME_PREPARE_AFTER_WAKEUP             10          /* in second */
 #define TIME_ACCEPT_PASS_LISTEN               5          /* in second */
+#define SAVE_MODE                             0
+#define FOCUS_MODE                            1
 
 /* Create OBJ use for prediction, LoRa, epoch time */
 Sgp4 mySat;
@@ -30,8 +32,8 @@ String orderSatList[8] = {"Norbi", "FossaSat-2E8", "FossaSat-2E11", "FossaSat-2E
 String payload;
 unsigned long epochNow = 1660138928;
 //String* upcomingSatList;
-uint8_t totalSat = 0;
-uint8_t posInList = 0;
+uint8_t totalSat = 0, posInList = 0;
+uint8_t state = FOCUS_MODE;
 
 void setup() {
   Serial.begin(9600);
@@ -46,49 +48,83 @@ void setup() {
   Serial.println(epochNow);
   
   updateTleData(payload, URL_TLE_TINYGS);
+  Serial.println("Check 1");
   mySat.site(10.954,106.852,18);
   totalSat = NUM_ORDER_SAT;
   createUpcomingOrderList(orderSatList, mySat, payload);
+  Serial.println("Check 2");
   
   EEPROM.begin(EEPROM_SIZE);
   if((EEPROM.read(ADDR_ID_EEPROM) > 0) && (EEPROM.read(ADDR_ID_EEPROM) < 255)){
     status.lastPacketInfo.id = EEPROM.read(ADDR_ID_EEPROM);
   }
+  Serial.println("Check 3");
   initFirebase();
-
+  Serial.println("Check 4");
   if(!SPIFFS.begin()){
     Serial.println("An Error has occurred while mounting SPIFFS");
     return;
   }
-  // Route for root / web page
   createWebPage();
-  // Start server
   server.begin();
+  Serial.println("Check 5");
+  status.stateSD = initSDCard();
+  File file = SD.open("/LoRa.txt");
+  if(!file) {
+    Serial.println("File doesn't exist");
+    Serial.println("Creating file...");
+    writeFile(SD, "/alo.txt", "JSON message \r\n");
+  }
+  else {
+    Serial.println("File already exists");  
+  }
+  file.close();
 }
 void loop(){
   getEpochTimeNow(epochNow);
-  Serial.print("now: "); Serial.println(epochNow);
+  //Serial.print("now: "); Serial.println(epochNow);
   initialize_Sat(orderSatList[posInList], mySat, payload);
   status.statePredict = Predict(mySat, epochNow);
-  if(epochInfo.epochStart - TIME_PREPARE_AFTER_WAKEUP > epochNow){
-    uint64_t timeToSleep = calculateSleepTime(epochNow, epochInfo.epochStart);
-    goToSleep(timeToSleep);
-  }else if(epochNow < epochInfo.epochStop){
+
+  switch(state){
+    case SAVE_MODE:
+      intoModeOP(posInList, epochNow, totalSat, SAVE_MODE);
+      break;
+    case FOCUS_MODE:
+      intoModeOP(posInList, epochNow, totalSat, FOCUS_MODE);
+      break;
+    default:
+      break;
+  }
+}
+void intoModeOP(uint8_t& positionInOrder, unsigned long& unixtNow, uint8_t totalSatOrder, uint8_t modeOP){
+  if(epochInfo.epochStart - TIME_PREPARE_AFTER_WAKEUP > unixtNow){
+    if(modeOP == SAVE_MODE){
+      uint64_t timeToSleep = calculateSleepTime(unixtNow, epochInfo.epochStart);
+      goToSleep(timeToSleep);
+    }else{
+      configParamsLoRa(status, radio, "GaoFen-x");
+      unsigned long unixtStart = epochInfo.epochStart - TIME_PREPARE_AFTER_WAKEUP;
+      while(unixtStart > unixtNow){
+        listenRadio(radio);
+        getEpochTimeNow(unixtNow);
+      }
+    }
+  }else if(unixtNow < epochInfo.epochStop){
     Serial.print("Sat listen: "); Serial.println(orderSatList[posInList]);
     configParamsLoRa(status, radio, orderSatList[posInList]);
-    while(epochNow <= epochInfo.epochStop){
+    while(unixtNow <= epochInfo.epochStop){
       listenRadio(radio);
-      getEpochTimeNow(epochNow);
+      getEpochTimeNow(unixtNow);
     }
     Serial.println("update TLE");
     updateTleData(payload, URL_TLE_TINYGS);
-    sortUpcomingList(orderSatList, mySat, payload, totalSat);
-    posInList = 0;
+    sortUpcomingList(orderSatList, mySat, payload, totalSatOrder);
+    positionInOrder = 0;
   }else{
-    ++posInList;
+    ++positionInOrder;
   }
 }
-
 void goToSleep(uint64_t timeToSleep)
 {
   esp_sleep_enable_timer_wakeup(timeToSleep * uS_TO_S_FACTOR);

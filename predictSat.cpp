@@ -1,5 +1,16 @@
 #include "predictSat.h"
-
+#include "time.h"
+void getEpochTimeNow(unsigned long& epochTime){
+  time_t now;
+  struct tm timeinfo;
+  if (!getLocalTime(&timeinfo)) {
+    epochTime = 0;
+    return;
+  }
+  time(&now);
+  epochTime = now;
+}
+/*
 void getEpochTimeNow(unsigned long& epochTime){
   struct tm timeinfo;
   int Year, Month, Day, Hour, Minute, Second;
@@ -15,6 +26,7 @@ void getEpochTimeNow(unsigned long& epochTime){
   Second = timeinfo.tm_sec;
   epochTime = unixTimestamp(Year,Month,Day,Hour, Minute, Second) - DAYLIGHT_OFFSET_SECOND;
 }
+*/
 String getTimeDate(){
   struct tm timeinfo;
   int Year, Month;
