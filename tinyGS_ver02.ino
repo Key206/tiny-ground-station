@@ -17,6 +17,8 @@
 #define TIME_ACCEPT_PASS_LISTEN               5          /* in second */
 #define SAVE_MODE                             0
 #define FOCUS_MODE                            1
+#define STEPPER_AZ                            1
+#define STEPPER_EL                            0
 
 /* Create OBJ use for prediction, LoRa, epoch time */
 Sgp4 mySat;
@@ -64,13 +66,13 @@ void setup() {
   createWebPage();
   server.begin();
   status.stateSD = initSDCard();
+  setupPWM();
 }
 void loop(){
   getEpochTimeNow(epochNow);
   //Serial.print("now: "); Serial.println(epochNow);
   initialize_Sat(orderSatList[posInList], mySat, payload);
   status.statePredict = Predict(mySat, epochNow);
-
   switch(state){
     case SAVE_MODE:
       intoModeOP(posInList, epochNow, totalSat, SAVE_MODE);

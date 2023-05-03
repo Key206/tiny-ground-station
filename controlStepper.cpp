@@ -1,31 +1,40 @@
 #include "controlStepper.h"
 
-hw_timer_t *timer = NULL;
+hw_timer_t *timer0 = NULL;
+hw_timer_t *timer1 = NULL;
 
-void IRAM_ATTR stopPWM() {
+void IRAM_ATTR stopPWM1() {
   ledcWrite(PWM1_CHANNEL, 0);
-  timerDetachInterrupt(timer);
-  timerEnd(timer);
+  timerDetachInterrupt(timer0);
+  timerEnd(timer0);
+}
+void IRAM_ATTR stopPWM2() {
+  ledcWrite(PWM2_CHANNEL, 0);
+  timerDetachInterrupt(timer1);
+  timerEnd(timer1);
 }
 void setupPWM(){
   ledcAttachPin(STEP_AZ, PWM1_CHANNEL);
-  ledcAttachPin(STEP_EL, PWM1_CHANNEL);
-  ledcSetup(PWM1_CHANNEL, PWM1_FREQ, PWM1_RES);  
+  ledcAttachPin(STEP_EL, PWM2_CHANNEL);
+  ledcSetup(PWM1_CHANNEL, PWM_FREQ, PWM_RES);  
+  ledcSetup(PWM2_CHANNEL, PWM_FREQ, PWM_RES);
 }
-void rotateStepper(double Angle){
-  /*
-  if(Angle > 0){
-    digitalWrite(DIR, HIGH);
-  }else{
-    digitalWrite(DIR, LOW);
-    Angle = Angle * (-1);
+void rotateStepper(uint8_t typeMotor, double Angle){
+  if(typeMotor){ // typeMotor == 1 => AZ stepper
+    (Angle > 0) ? digitalWrite(DIR_AZ, HIGH) : digitalWrite(DIR_AZ, LOW);
+    timer0 = timerBegin(0, 80, true);
+    timerAttachInterrupt(timer0, &stopPWM1, true);
+    timerAlarmWrite(timer0, (uint32_t)TIMER_INTERVAL_US*Angle/360, true);
+    ledcWrite(PWM1_CHANNEL, 50);
+    timerAlarmEnable(timer0);
+  }else{ // typeMotor == 0 => EL stepper
+    (Angle > 0) ? digitalWrite(DIR_EL, HIGH) : digitalWrite(DIR_EL, LOW);
+    timer1 = timerBegin(1, 80, true);
+    timerAttachInterrupt(timer1, &stopPWM2, true);
+    timerAlarmWrite(timer1, (uint32_t)TIMER_INTERVAL_US*Angle/360, true);
+    ledcWrite(PWM2_CHANNEL, 50);
+    timerAlarmEnable(timer1);
   }
-  */
-  timer = timerBegin(0, 80, true);
-  timerAttachInterrupt(timer, &stopPWM, true);
-  timerAlarmWrite(timer, (uint32_t)TIMER_INTERVAL_US*Angle/360, true);
-  ledcWrite(PWM1_CHANNEL, 50);
-  timerAlarmEnable(timer);
 }
 /*
 void rotateStepper(AccelStepper& mystepper,double Angle)
