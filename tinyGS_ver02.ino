@@ -17,8 +17,6 @@
 #define TIME_ACCEPT_PASS_LISTEN               5          /* in second */
 #define SAVE_MODE                             0
 #define FOCUS_MODE                            1
-#define STEPPER_AZ                            1
-#define STEPPER_EL                            0
 
 /* Create OBJ use for prediction, LoRa, epoch time */
 Sgp4 mySat;
@@ -44,7 +42,9 @@ void setup() {
   Serial.println("WiFi connected.");
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
-  
+  pinMode(DIR_AZ, OUTPUT);
+  pinMode(DIR_EL, OUTPUT);
+ 
   configTime(GMT_OFFSET_SECOND, DAYLIGHT_OFFSET_SECOND, SERVER_NTP);
   getEpochTimeNow(epochNow);
   Serial.println(epochNow);

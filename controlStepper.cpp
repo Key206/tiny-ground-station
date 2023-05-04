@@ -21,14 +21,24 @@ void setupPWM(){
 }
 void rotateStepper(uint8_t typeMotor, double Angle){
   if(typeMotor){ // typeMotor == 1 => AZ stepper
-    (Angle > 0) ? digitalWrite(DIR_AZ, HIGH) : digitalWrite(DIR_AZ, LOW);
+    if(Angle > 0){
+      digitalWrite(DIR_AZ, HIGH);
+    }else{
+      digitalWrite(DIR_AZ, LOW);
+      Angle = -Angle;
+    }
     timer0 = timerBegin(0, 80, true);
     timerAttachInterrupt(timer0, &stopPWM1, true);
     timerAlarmWrite(timer0, (uint32_t)TIMER_INTERVAL_US*Angle/360, true);
     ledcWrite(PWM1_CHANNEL, 50);
     timerAlarmEnable(timer0);
   }else{ // typeMotor == 0 => EL stepper
-    (Angle > 0) ? digitalWrite(DIR_EL, HIGH) : digitalWrite(DIR_EL, LOW);
+    if(Angle > 0){
+      digitalWrite(DIR_EL, HIGH);
+    }else{
+      digitalWrite(DIR_EL, LOW);
+      Angle = -Angle;
+    }
     timer1 = timerBegin(1, 80, true);
     timerAttachInterrupt(timer1, &stopPWM2, true);
     timerAlarmWrite(timer1, (uint32_t)TIMER_INTERVAL_US*Angle/360, true);
@@ -36,20 +46,7 @@ void rotateStepper(uint8_t typeMotor, double Angle){
     timerAlarmEnable(timer1);
   }
 }
-/*
-void rotateStepper(AccelStepper& mystepper,double Angle)
-{  
-  int target = (STEP_ONE_TURN*(int)Angle/360);
-  int directionRotate = (Angle < 0 ? -1 : 1);
-  int speedRotate = directionRotate * SPEED_ROTATE;
-  mystepper.setCurrentPosition(0); 
-  while(mystepper.currentPosition() != target) 
-  {
-    mystepper.setSpeed(speedRotate); 
-    mystepper.runSpeed();
-  }
-} 
-void rotateInTrackingMode(AccelStepper& stepperAz, AccelStepper& stepperEl, Sgp4& satInfo, bool resetFlag)
+void rotateInTrackingMode(Sgp4& satInfo, bool resetFlag)
 {
   static double preDegreeAz = 0;
   static double preDegreeEl = 0;
@@ -73,28 +70,23 @@ void rotateInTrackingMode(AccelStepper& stepperAz, AccelStepper& stepperEl, Sgp4
       return;
     }
   }else{
-    rotateStepper(stepperAz, -preDegreeAz);
-    rotateStepper(stepperEl, -preDegreeEl);
+    rotateStepper(STEPPER_AZ, -preDegreeAz);
+    rotateStepper(STEPPER_EL, -preDegreeEl);
     preDegreeAz = 0;
     preDegreeEl = 0;
     return;
   }
-  rotateStepper(stepperEl, targetDegreeEl);
-  rotateStepper(stepperAz, targetDegreeAz); 
+  rotateStepper(STEPPER_EL, targetDegreeEl);
+  rotateStepper(STEPPER_AZ, targetDegreeAz); 
 }
-bool rotateInBasicMode(AccelStepper& stepperAz, AccelStepper& stepperEl, Sgp4& satInfo, unsigned long t_now)
-{
-  unsigned long t_max = Predict(satInfo, t_now);
-  if(t_max == 0){ // failed predict
-    return false;
-  }
+bool rotateInStandardMode(Sgp4& satInfo, unsigned long t_max)
+{ 
   satInfo.findsat(t_max);
   
   double targetDegreeEl = satInfo.satEl;
   double targetDegreeAz = satInfo.satAz;
   
-  rotateStepper(stepperEl, targetDegreeEl);
-  rotateStepper(stepperAz, targetDegreeAz);
+  rotateStepper(STEPPER_EL, targetDegreeEl);
+  rotateStepper(STEPPER_AZ, targetDegreeAz);
   return true;
 }
-*/
