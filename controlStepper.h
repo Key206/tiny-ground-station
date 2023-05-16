@@ -1,4 +1,3 @@
-#include <esp32-hal-timer.h>
 #include "predictSat.h"
 
 #define STEP_ONE_TURN               200

@@ -70,7 +70,6 @@ void setup() {
 }
 void loop(){
   getEpochTimeNow(epochNow);
-  //Serial.print("now: "); Serial.println(epochNow);
   initialize_Sat(orderSatList[posInList], mySat, payload);
   status.statePredict = Predict(mySat, epochNow);
   switch(state){

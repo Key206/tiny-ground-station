@@ -8,7 +8,7 @@ struct PacketInfo {
 };
 struct ModemInfo {
   String satellite  = "GaoFen";
-  String  modem_mode  = "LoRa" ;     // 1-LoRa  2-FSK  3-GMSK
+  String  modem_mode  = "LoRa" ;    
   float   frequency   = 400.45; // MHz  // Norbi: 436.703
   float   freqOffset  = 0;       // Hz 
   float   bw          = 500;   // kHz dual sideban // Norbi: 250.0
@@ -22,7 +22,7 @@ struct ModemInfo {
   uint8_t    OOK      = false; // 0 disable  1 -> 0.3  2-> 0.5  3 -> 0.6  4-> 1.0
   bool    crc         = true;
   uint8_t fldro       = true;
-  uint8_t gain        = 0;
+  uint8_t gain        = 6;
   uint32_t  NORAD     = 46494;  
   uint8_t   fsw[8]    = {0,0,0,0,0,0,0,0};
   uint8_t   swSize     = 0;

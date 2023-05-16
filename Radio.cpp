@@ -60,7 +60,8 @@ void listenRadio(SX1278& radio)
     state = radio.readData(respFrame, respLen);
     status.lastPacketInfo.rssi = radio.getRSSI();
     status.lastPacketInfo.snr = radio.getSNR();
-    
+    Serial.print("RSSI: "); Serial.println(status.lastPacketInfo.rssi);
+    Serial.print("SNR: "); Serial.println(status.lastPacketInfo.snr);
     status.lastPacketInfo.id += 1;
     EEPROM.write(ADDR_ID_EEPROM, status.lastPacketInfo.id);
     EEPROM.commit();
@@ -93,27 +94,31 @@ void saveDataToSD(String packet){
   serializeJson(JSONbuffer, JSONmessageBuffer);
   status.stateSD = appendFile(SD, "/LoRa.txt", JSONmessageBuffer);
 }
-void configParamsLoRa(Status& param, SX1278& myRadio, String orderSat){
+bool configParamsLoRa(Status& param, SX1278& myRadio, String orderSat){
+  bool state = true;
   if(orderSat[0] == 'G'){
     param.modeminfo.satellite = orderSat;
-    initLoRa(param, paramsGaoFen,myRadio);
+    state = initLoRa(param, paramsGaoFen,myRadio);
   }else if(orderSat[0] == 'F'){
     param.modeminfo.satellite = orderSat;
-    initLoRa(param, paramsFossa,myRadio);
+    state = initLoRa(param, paramsFossa,myRadio);
   }else{
     param.modeminfo.satellite = "Norbi"; 
-    initLoRa(param, paramsNorbi,myRadio);
+    state = initLoRa(param, paramsNorbi,myRadio);
   }
+  return state;
 }
-void initLoRa(Status& param, float* arr, SX1278& myRadio){
-  param.modeminfo.frequency = arr[0]; 
-  param.modeminfo.bw = arr[1];
-  param.modeminfo.sf = arr[2];
-  param.modeminfo.cr = arr[3];
+bool initLoRa(Status& param, float* paramsSat, SX1278& myRadio){
+  param.modeminfo.frequency = paramSat[0]; 
+  param.modeminfo.bw = paramsSat[1];
+  param.modeminfo.sf = paramsSat[2];
+  param.modeminfo.cr = paramsSat[3];
   param.stateLoRa = beginLoRa(myRadio);
   if(!param.stateLoRa){
     Serial.println("Fail init LoRa");
+    return false;
   }
+  return true;
 }
 bool initFirebase()
 {
@@ -123,12 +128,9 @@ bool initFirebase()
     signupOK = true;
   }
   else{
-    //Serial.printf("%s\n", config.signer.signupError.message.c_str());
     return false;
   }
-  // Assign the callback function for the long running token generation task */
   config.token_status_callback = tokenStatusCallback; 
-  // Initialize the library with the Firebase authen and config
   Firebase.begin(&config, &auth);
   return true;
 }

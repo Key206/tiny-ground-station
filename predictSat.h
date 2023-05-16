@@ -18,7 +18,7 @@ extern timeInfoSat epochInfo;
 void getEpochTimeNow(unsigned long& epochTime);
 String getTimeDate();
 void updateEpochTimeNow(const char* ntpServerName, unsigned long& epochTime);
-unsigned long unixTimestamp(int year, int month, int day, int hour, int min, int sec);
+//unsigned long unixTimestamp(int year, int month, int day, int hour, int min, int sec);
 void initialize_Sat(String nameOfSat, Sgp4& sat, String payload);
 unsigned long Predict(Sgp4& sat, unsigned long unix_t);
 bool createUpcomingList(String* listUpcomingSat, Sgp4 sat, String payload);

@@ -10,23 +10,6 @@ void getEpochTimeNow(unsigned long& epochTime){
   time(&now);
   epochTime = now;
 }
-/*
-void getEpochTimeNow(unsigned long& epochTime){
-  struct tm timeinfo;
-  int Year, Month, Day, Hour, Minute, Second;
-  if(!getLocalTime(&timeinfo)){
-    Serial.println("Failed to obtain time");
-    return;
-  }
-  Year = timeinfo.tm_year + 1900;
-  Month = timeinfo.tm_mon + 1;
-  Day = timeinfo.tm_mday;
-  Hour = timeinfo.tm_hour;
-  Minute = timeinfo.tm_min;
-  Second = timeinfo.tm_sec;
-  epochTime = unixTimestamp(Year,Month,Day,Hour, Minute, Second) - DAYLIGHT_OFFSET_SECOND;
-}
-*/
 String getTimeDate(){
   struct tm timeinfo;
   int Year, Month;
@@ -44,6 +27,7 @@ void updateEpochTimeNow(const char* ntpServerName, unsigned long& epochTime)
   configTime(7, 25200, ntpServerName);
   getEpochTimeNow(epochTime);
 }
+/*
 unsigned long unixTimestamp(int year, int month, int day, int hour, int min, int sec) {
   const short days_since_beginning_of_year[12] = {0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334};
   int leap_years = ((year - 1) - 1968) / 4
@@ -52,9 +36,10 @@ unsigned long unixTimestamp(int year, int month, int day, int hour, int min, int
   long days_since_1970 = (year - 1970) * 365 + leap_years
                          + days_since_beginning_of_year[month - 1] + day - 1;
   if ( (month > 2) && (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)) )
-    days_since_1970 += 1; /* +leap day, if year is a leap year */
+    days_since_1970 += 1; /* +leap day, if year is a leap year 
   return sec + 60 * ( min + 60 * (hour + 24 * days_since_1970) );
 }
+*/
 void initialize_Sat(String nameOfSat, Sgp4& sat, String payload)
 {
   char arrSatName[20];
@@ -71,7 +56,7 @@ void initialize_Sat(String nameOfSat, Sgp4& sat, String payload)
 unsigned long Predict(Sgp4& sat, unsigned long unix_t){
   passinfo overpass;                       
   sat.initpredpoint(unix_t , 0.0);       
-  int  year; int mon; int day; int hr; int minute; double sec;
+  int  year, mon, day, hr, minute; double sec;
   bool nonError;
   nonError = sat.nextpass(&overpass,10);    
   if(nonError){ 
