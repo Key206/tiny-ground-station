@@ -6,10 +6,11 @@
 #include "ESPAsyncWebServer.h"
 #include <SPIFFS.h>
 
-#define SSID_WIFI                             "Thanh Tai"
-#define PASSWORD_WIFI                         "123456789"
+#define SSID_WIFI                             "RFThings Vietnam"
+#define PASSWORD_WIFI                         "khongvaoduoc!"
 
 #define URL_TLE_TINYGS                        "https://api.tinygs.com/v1/tinygs_supported.txt"
+#define PATH_TLE_IN_SD                        "/TLE.txt"
 #define SERVER_NTP                            "pool.ntp.org"
 
 #define uS_TO_S_FACTOR                        1000000ULL  /* Conversion factor for micro seconds to seconds */
@@ -39,8 +40,6 @@ void setup() {
   Serial.begin(9600);
   WiFi.begin(SSID_WIFI, PASSWORD_WIFI);
   while (WiFi.status() != WL_CONNECTED);
-  Serial.println("WiFi connected.");
-  Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
   pinMode(DIR_AZ, OUTPUT);
   pinMode(DIR_EL, OUTPUT);
@@ -50,6 +49,7 @@ void setup() {
   Serial.println(epochNow);
   
   updateTleData(payload, URL_TLE_TINYGS);
+  saveTleDataToSD(payload); // use when offline
   mySat.site(10.954,106.852,18);
   totalSat = NUM_ORDER_SAT;
   createUpcomingOrderList(orderSatList, mySat, payload);
@@ -61,12 +61,12 @@ void setup() {
   initFirebase();
   if(!SPIFFS.begin()){
     Serial.println("An Error has occurred while mounting SPIFFS");
-    return;
+    //return;
   }
   createWebPage();
   server.begin();
   status.stateSD = initSDCard();
-  setupPWM();
+  setupPWM();  
 }
 void loop(){
   getEpochTimeNow(epochNow);
@@ -110,6 +110,13 @@ void intoModeOP(uint8_t& positionInOrder, unsigned long& unixtNow, uint8_t total
   }else{
     ++positionInOrder;
   }
+}
+void saveTleDataToSD(String& payload){
+  const char* mess = &payload[0];
+  writeFile(SD, PATH_TLE_IN_SD, mess);
+}
+void updateTleDataFromSD(String& payload){
+  readFile(SD, PATH_TLE_IN_SD, payload);
 }
 void goToSleep(uint64_t timeToSleep)
 {

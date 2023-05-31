@@ -33,3 +33,12 @@ bool appendFile(fs::FS &fs, const char * path, const char * message) {
     return false;
   }
 }
+void readFile(fs::FS &fs, const char * path, String& payload){
+  File file = fs.open(path);
+  if(!file){
+    Serial.println("Failed to open file for reading");
+    return;
+  }
+  payload = file.readString();
+  file.close();
+}

@@ -57,6 +57,7 @@ bool getTLE(String nameSat, char* tle_line1, char* tle_line2, String payload){
     return true;
   }  
   else{
+    Serial.println("fail");
     return false;
   }   
 }

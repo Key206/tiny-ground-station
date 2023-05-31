@@ -12,6 +12,7 @@ FirebaseJson json;
 float paramsNorbi[4] = {436.703, 250, 10, 5};
 float paramsFossa[4] = {401.7, 125, 11, 8}; 
 float paramsGaoFen[4] = {400.45, 500, 9, 5};
+float paramsGaoFen19[4] = {400.13, 500, 9, 5};
 
 volatile bool receivedFlag = false;
 volatile bool enableInterrupt = true;
@@ -50,7 +51,6 @@ void listenRadio(SX1278& radio)
   if(receivedFlag) {
     enableInterrupt = false;
     receivedFlag = false;
-    
     size_t respLen = 0;
     uint8_t *respFrame = 0;
     int16_t state = 0;
@@ -60,8 +60,11 @@ void listenRadio(SX1278& radio)
     state = radio.readData(respFrame, respLen);
     status.lastPacketInfo.rssi = radio.getRSSI();
     status.lastPacketInfo.snr = radio.getSNR();
+    // use for test
     Serial.print("RSSI: "); Serial.println(status.lastPacketInfo.rssi);
     Serial.print("SNR: "); Serial.println(status.lastPacketInfo.snr);
+    //saveTestLNA();
+    // 
     status.lastPacketInfo.id += 1;
     EEPROM.write(ADDR_ID_EEPROM, status.lastPacketInfo.id);
     EEPROM.commit();
@@ -90,10 +93,22 @@ void saveDataToSD(String packet){
   JSONbuffer["packet"] = packet;
   JSONbuffer["rssi"] = status.lastPacketInfo.rssi;
   JSONbuffer["snr"] = status.lastPacketInfo.snr;
+  JSONbuffer["lat"] = status.lastPacketInfo.lat;
+  JSONbuffer["lon"] = status.lastPacketInfo.lon;
   char JSONmessageBuffer[300]; // be careful the size of buffer
   serializeJson(JSONbuffer, JSONmessageBuffer);
   status.stateSD = appendFile(SD, "/LoRa.txt", JSONmessageBuffer);
 }
+/*
+void saveTestLNA(){
+  StaticJsonDocument<100> JSONbuffer;
+  JSONbuffer["rssi"] = status.lastPacketInfo.rssi;
+  JSONbuffer["snr"] = status.lastPacketInfo.snr;
+  char JSONmessageBuffer[100]; // be careful the size of buffer
+  serializeJson(JSONbuffer, JSONmessageBuffer);
+  status.stateSD = appendFile(SD, "/LNA.txt", JSONmessageBuffer);
+}
+*/
 bool configParamsLoRa(Status& param, SX1278& myRadio, String orderSat){
   bool state = true;
   if(orderSat[0] == 'G'){
@@ -109,13 +124,12 @@ bool configParamsLoRa(Status& param, SX1278& myRadio, String orderSat){
   return state;
 }
 bool initLoRa(Status& param, float* paramsSat, SX1278& myRadio){
-  param.modeminfo.frequency = paramSat[0]; 
+  param.modeminfo.frequency = paramsSat[0]; 
   param.modeminfo.bw = paramsSat[1];
   param.modeminfo.sf = paramsSat[2];
   param.modeminfo.cr = paramsSat[3];
   param.stateLoRa = beginLoRa(myRadio);
   if(!param.stateLoRa){
-    Serial.println("Fail init LoRa");
     return false;
   }
   return true;

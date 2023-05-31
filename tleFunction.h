@@ -1,7 +1,7 @@
 #include <HTTPClient.h>
 
 #define STEP_JUMP_TLE          140
-#define NUM_OF_SAT             13
+//#define NUM_OF_SAT             13
 #define OFFSET_TIME_PREDICT    600 // in second
 
 void updateTleData(String& payload, String serverName);
