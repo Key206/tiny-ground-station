@@ -24,10 +24,15 @@ void setFlag(void) {
   receivedFlag = true;
 }
 
-bool beginLoRa(SX1278& radio)
+bool beginLoRa(SX1278& radio, bool isPassing)
 {
   ModemInfo &m = status.modeminfo;
-  int state = radio.begin(m.frequency, m.bw, m.sf, m.cr, m.sw, m.power, m.preambleLength, m.gain);
+  int state;
+  if(isPassing){
+    state = radio.begin(m.frequency, m.bw, m.sf, m.cr, m.sw, m.power, m.preambleLength, LNA_GAIN); 
+  }else{
+    state = radio.begin(m.frequency, m.bw, m.sf, m.cr, m.sw, m.power, m.preambleLength, m.gain);
+  }
   if (state == RADIOLIB_ERR_NONE) {
     radio.setCRC(m.crc);
     radio.forceLDRO(m.fldro);
@@ -61,8 +66,8 @@ void listenRadio(SX1278& radio)
     status.lastPacketInfo.rssi = radio.getRSSI();
     status.lastPacketInfo.snr = radio.getSNR();
     // use for test
-    Serial.print("RSSI: "); Serial.println(status.lastPacketInfo.rssi);
-    Serial.print("SNR: "); Serial.println(status.lastPacketInfo.snr);
+    //Serial.print("RSSI: "); Serial.println(status.lastPacketInfo.rssi);
+    //Serial.print("SNR: "); Serial.println(status.lastPacketInfo.snr);
     //saveTestLNA();
     // 
     status.lastPacketInfo.id += 1;
@@ -109,26 +114,31 @@ void saveTestLNA(){
   status.stateSD = appendFile(SD, "/LNA.txt", JSONmessageBuffer);
 }
 */
-bool configParamsLoRa(Status& param, SX1278& myRadio, String orderSat){
+bool configParamsLoRa(Status& param, SX1278& myRadio, String orderSat, bool isPassing){
   bool state = true;
   if(orderSat[0] == 'G'){
-    param.modeminfo.satellite = orderSat;
-    state = initLoRa(param, paramsGaoFen,myRadio);
+    if(orderSat == "GaoFen-19"){
+      param.modeminfo.satellite = orderSat;
+      state = initLoRa(param, paramsGaoFen19, myRadio, isPassing);
+    }else{
+      param.modeminfo.satellite = orderSat;
+      state = initLoRa(param, paramsGaoFen, myRadio, isPassing);
+    }
   }else if(orderSat[0] == 'F'){
     param.modeminfo.satellite = orderSat;
-    state = initLoRa(param, paramsFossa,myRadio);
+    state = initLoRa(param, paramsFossa, myRadio, isPassing);
   }else{
     param.modeminfo.satellite = "Norbi"; 
-    state = initLoRa(param, paramsNorbi,myRadio);
+    state = initLoRa(param, paramsNorbi, myRadio, isPassing);
   }
   return state;
 }
-bool initLoRa(Status& param, float* paramsSat, SX1278& myRadio){
+bool initLoRa(Status& param, float* paramsSat, SX1278& myRadio, bool isPassing){
   param.modeminfo.frequency = paramsSat[0]; 
   param.modeminfo.bw = paramsSat[1];
   param.modeminfo.sf = paramsSat[2];
   param.modeminfo.cr = paramsSat[3];
-  param.stateLoRa = beginLoRa(myRadio);
+  param.stateLoRa = beginLoRa(myRadio, isPassing);
   if(!param.stateLoRa){
     return false;
   }

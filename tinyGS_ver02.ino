@@ -6,8 +6,8 @@
 #include "ESPAsyncWebServer.h"
 #include <SPIFFS.h>
 
-#define SSID_WIFI                             "RFThings Vietnam"
-#define PASSWORD_WIFI                         "khongvaoduoc!"
+#define SSID_WIFI                             "Thanh Tai"
+#define PASSWORD_WIFI                         "123456789"
 
 #define URL_TLE_TINYGS                        "https://api.tinygs.com/v1/tinygs_supported.txt"
 #define PATH_TLE_IN_SD                        "/TLE.txt"
@@ -47,6 +47,8 @@ void setup() {
   configTime(GMT_OFFSET_SECOND, DAYLIGHT_OFFSET_SECOND, SERVER_NTP);
   getEpochTimeNow(epochNow);
   Serial.println(epochNow);
+
+  status.stateSD = initSDCard();
   
   updateTleData(payload, URL_TLE_TINYGS);
   saveTleDataToSD(payload); // use when offline
@@ -65,7 +67,6 @@ void setup() {
   }
   createWebPage();
   server.begin();
-  status.stateSD = initSDCard();
   setupPWM();  
 }
 void loop(){
@@ -89,7 +90,7 @@ void intoModeOP(uint8_t& positionInOrder, unsigned long& unixtNow, uint8_t total
       uint64_t timeToSleep = calculateSleepTime(unixtNow, epochInfo.epochStart);
       goToSleep(timeToSleep);
     }else{
-      configParamsLoRa(status, radio, "GaoFen-x");
+      configParamsLoRa(status, radio, "GaoFen-19", false);
       unsigned long unixtStart = epochInfo.epochStart - TIME_PREPARE_AFTER_WAKEUP;
       while(unixtStart > unixtNow){
         listenRadio(radio);
@@ -98,7 +99,7 @@ void intoModeOP(uint8_t& positionInOrder, unsigned long& unixtNow, uint8_t total
     }
   }else if(unixtNow < epochInfo.epochStop){
     Serial.print("Sat listen: "); Serial.println(orderSatList[posInList]);
-    configParamsLoRa(status, radio, orderSatList[posInList]);
+    configParamsLoRa(status, radio, orderSatList[posInList], true);
     while(unixtNow <= epochInfo.epochStop){
       listenRadio(radio);
       getEpochTimeNow(unixtNow);
