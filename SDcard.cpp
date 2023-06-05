@@ -42,3 +42,10 @@ void readFile(fs::FS &fs, const char * path, String& payload){
   payload = file.readString();
   file.close();
 }
+void saveTleDataToSD(String& payload){
+  const char* mess = &payload[0];
+  writeFile(SD, PATH_TLE_IN_SD, mess);
+}
+void updateTleDataFromSD(String& payload){
+  readFile(SD, PATH_TLE_IN_SD, payload);
+}

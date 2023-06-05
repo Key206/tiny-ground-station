@@ -10,7 +10,6 @@
 #define PASSWORD_WIFI                         "123456789"
 
 #define URL_TLE_TINYGS                        "https://api.tinygs.com/v1/tinygs_supported.txt"
-#define PATH_TLE_IN_SD                        "/TLE.txt"
 #define SERVER_NTP                            "pool.ntp.org"
 
 #define uS_TO_S_FACTOR                        1000000ULL  /* Conversion factor for micro seconds to seconds */
@@ -18,6 +17,9 @@
 #define TIME_ACCEPT_PASS_LISTEN               5          /* in second */
 #define SAVE_MODE                             0
 #define FOCUS_MODE                            1
+#define STATE_PRE_PASS                        0
+#define STATE_IN_PASS                         1
+#define STATE_POST_PASS                       2
 
 /* Create OBJ use for prediction, LoRa, epoch time */
 Sgp4 mySat;
@@ -34,7 +36,11 @@ String payload;
 unsigned long epochNow = 1660138928;
 //String* upcomingSatList;
 uint8_t totalSat = 0, posInList = 0;
-uint8_t state = FOCUS_MODE;
+struct stateGS{
+  uint8_t current = STATE_PRE_PASS;
+  uint8_t previous; 
+};
+stateGS state;
 
 void setup() {
   Serial.begin(9600);
@@ -70,16 +76,15 @@ void setup() {
   setupPWM();  
 }
 void loop(){
-  getEpochTimeNow(epochNow);
-  initialize_Sat(orderSatList[posInList], mySat, payload);
-  status.statePredict = Predict(mySat, epochNow);
-  switch(state){
-    case SAVE_MODE:
-      intoModeOP(posInList, epochNow, totalSat, SAVE_MODE);
+  switch(state.current){
+    case STATE_PRE_PASS:
+      prePass(posInList, epochNow, FOCUS_MODE, state);
       break;
-    case FOCUS_MODE:
-      intoModeOP(posInList, epochNow, totalSat, FOCUS_MODE);
+    case STATE_IN_PASS:
+      inPass(posInList, epochNow, state);
       break;
+    case STATE_POST_PASS:
+      postPass(posInList, totalSat, state);
     default:
       break;
   }
@@ -112,13 +117,6 @@ void intoModeOP(uint8_t& positionInOrder, unsigned long& unixtNow, uint8_t total
     ++positionInOrder;
   }
 }
-void saveTleDataToSD(String& payload){
-  const char* mess = &payload[0];
-  writeFile(SD, PATH_TLE_IN_SD, mess);
-}
-void updateTleDataFromSD(String& payload){
-  readFile(SD, PATH_TLE_IN_SD, payload);
-}
 void goToSleep(uint64_t timeToSleep)
 {
   esp_sleep_enable_timer_wakeup(timeToSleep * uS_TO_S_FACTOR);
@@ -130,6 +128,54 @@ void goToSleep(uint64_t timeToSleep)
 uint64_t calculateSleepTime(unsigned long Now, unsigned long Start)
 {
   return (uint64_t)(Start - Now - TIME_PREPARE_AFTER_WAKEUP);
+}
+void findSatEpochInfo(uint8_t positionInOrder, unsigned long& unixtNow){
+  getEpochTimeNow(unixtNow);
+  initialize_Sat(orderSatList[positionInOrder], mySat, payload);
+  status.statePredict = Predict(mySat, unixtNow);
+}
+void prePass(uint8_t positionInOrder, unsigned long& unixtNow, uint8_t modeOP, stateGS& state){
+  findSatEpochInfo(positionInOrder, unixtNow);
+  state.previous = STATE_PRE_PASS;
+  if(epochInfo.epochStart - TIME_PREPARE_AFTER_WAKEUP > unixtNow){
+    if(modeOP == SAVE_MODE){
+      uint64_t timeToSleep = calculateSleepTime(unixtNow, epochInfo.epochStart);
+      goToSleep(timeToSleep);
+    }else{
+      configParamsLoRa(status, radio, "GaoFen-x", false);
+      unsigned long unixtStart = epochInfo.epochStart - TIME_PREPARE_AFTER_WAKEUP;
+      while(unixtStart > unixtNow){
+        listenRadio(radio);
+        getEpochTimeNow(unixtNow);
+      } 
+    }
+  }else if(unixtNow < epochInfo.epochStop){
+    state.current = STATE_IN_PASS;
+  }else{
+    state.current = STATE_POST_PASS;
+  }
+}
+void inPass(uint8_t positionInOrder, unsigned long& unixtNow, stateGS& state){
+  Serial.print("Sat listen: "); Serial.println(orderSatList[positionInOrder]);
+  configParamsLoRa(status, radio, orderSatList[positionInOrder], true);
+  while(unixtNow <= epochInfo.epochStop){
+    listenRadio(radio);
+    getEpochTimeNow(unixtNow);
+  }
+  state.previous = STATE_IN_PASS;
+  state.current = STATE_POST_PASS;
+}
+void postPass(uint8_t& positionInOrder, uint8_t totalSatOrder, stateGS& state){
+  Serial.println("update TLE");
+  updateTleData(payload, URL_TLE_TINYGS);
+  sortUpcomingList(orderSatList, mySat, payload, totalSatOrder);
+  if(state.previous != STATE_PRE_PASS){
+    positionInOrder = 0;
+  }else{
+    ++positionInOrder;
+  }
+  state.previous = STATE_POST_PASS;
+  state.current = STATE_PRE_PASS;
 }
 void createWebPage(void){
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
