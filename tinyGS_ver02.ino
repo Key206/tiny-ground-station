@@ -85,36 +85,9 @@ void loop(){
       break;
     case STATE_POST_PASS:
       postPass(posInList, totalSat, state);
+      break;
     default:
       break;
-  }
-}
-void intoModeOP(uint8_t& positionInOrder, unsigned long& unixtNow, uint8_t totalSatOrder, uint8_t modeOP){
-  if(epochInfo.epochStart - TIME_PREPARE_AFTER_WAKEUP > unixtNow){
-    if(modeOP == SAVE_MODE){
-      uint64_t timeToSleep = calculateSleepTime(unixtNow, epochInfo.epochStart);
-      goToSleep(timeToSleep);
-    }else{
-      configParamsLoRa(status, radio, "GaoFen-19", false);
-      unsigned long unixtStart = epochInfo.epochStart - TIME_PREPARE_AFTER_WAKEUP;
-      while(unixtStart > unixtNow){
-        listenRadio(radio);
-        getEpochTimeNow(unixtNow);
-      }
-    }
-  }else if(unixtNow < epochInfo.epochStop){
-    Serial.print("Sat listen: "); Serial.println(orderSatList[posInList]);
-    configParamsLoRa(status, radio, orderSatList[posInList], true);
-    while(unixtNow <= epochInfo.epochStop){
-      listenRadio(radio);
-      getEpochTimeNow(unixtNow);
-    }
-    Serial.println("update TLE");
-    updateTleData(payload, URL_TLE_TINYGS);
-    sortUpcomingList(orderSatList, mySat, payload, totalSatOrder);
-    positionInOrder = 0;
-  }else{
-    ++positionInOrder;
   }
 }
 void goToSleep(uint64_t timeToSleep)
