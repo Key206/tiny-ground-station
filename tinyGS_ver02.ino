@@ -170,7 +170,7 @@ void createWebPage(void){
     request->send_P(200, "text/plain", String(status.statePredict).c_str());
   });
   server.on("/checkEpoch", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send_P(200, "text/plain", String(epochNow).c_str());
+    request->send_P(200, "text/plain", String(epochInfo.epochStart).c_str());
   });
   server.on("/winter", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(SPIFFS, "/winter.jpg", "image/jpg");
@@ -189,7 +189,7 @@ String processor(const String& var){
   }else if(var == "PREDICT"){
     return ((String)status.statePredict);
   }else if(var == "EPOCH"){
-    return ((String)epochNow);
+    return ((String)epochInfo.epochStart);
   }else{
     return String();
   } 
