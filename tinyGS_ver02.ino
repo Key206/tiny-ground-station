@@ -30,7 +30,7 @@ Status status;
 SX1278 radio = new Module(5, 4, 27, 17);
 AsyncWebServer server(80);
 /* Create order sat list */
-String orderSatList[8] = {"Norbi", "FossaSat-2E8", "FossaSat-2E11", "FossaSat-2E12", "GaoFen-7", "GaoFen-13", "GaoFen-19", "GaoFen-17"};
+String orderSatList[8] = {"Norbi", "FossaSat-2E11", "FossaSat-2E12", "GaoFen-7", "GaoFen-19", "FEES", "SATLLA-2B", "Sapling2"};
 /* Create global variables */
 String payload;
 unsigned long epochNow = 1660138928;
@@ -115,7 +115,7 @@ void prePass(uint8_t positionInOrder, unsigned long& unixtNow, uint8_t modeOP, s
       uint64_t timeToSleep = calculateSleepTime(unixtNow, epochInfo.epochStart);
       goToSleep(timeToSleep);
     }else{
-      configParamsLoRa(status, radio, "GaoFen-x", false);
+      configParamsLoRa(status, radio, "GaoFen-7", false);
       unsigned long unixtStart = epochInfo.epochStart - TIME_PREPARE_AFTER_WAKEUP;
       while(unixtStart > unixtNow){
         listenRadio(radio);
@@ -177,7 +177,6 @@ void createWebPage(void){
   });
 }
 String processor(const String& var){
-  //Serial.println(var);
   if (var == "RRSI"){
     return String(status.lastPacketInfo.rssi);
   }else if(var == "PACKET"){

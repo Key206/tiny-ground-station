@@ -11,8 +11,11 @@ FirebaseJson json;
 
 float paramsNorbi[4] = {436.703, 250, 10, 5};
 float paramsFossa[4] = {401.7, 125, 11, 8}; 
-float paramsGaoFen[4] = {400.45, 500, 9, 5};
+float paramsGaoFen7[4] = {400.45, 500, 9, 5};
 float paramsGaoFen19[4] = {400.13, 500, 9, 5};
+float paramsSapling2[4] = {437.4, 125, 7, 8};
+float paramsSATLLA2B[4] = {437.25, 62.5, 10, 5};
+float paramsFEES[4] = {437.2, 125, 9, 5};
 
 volatile bool receivedFlag = false;
 volatile bool enableInterrupt = true;
@@ -116,20 +119,22 @@ void saveTestLNA(){
 */
 bool configParamsLoRa(Status& param, SX1278& myRadio, String orderSat, bool isPassing){
   bool state = true;
-  if(orderSat[0] == 'G'){
-    if(orderSat == "GaoFen-19"){
-      param.modeminfo.satellite = orderSat;
-      state = initLoRa(param, paramsGaoFen19, myRadio, isPassing);
-    }else{
-      param.modeminfo.satellite = orderSat;
-      state = initLoRa(param, paramsGaoFen, myRadio, isPassing);
-    }
-  }else if(orderSat[0] == 'F'){
-    param.modeminfo.satellite = orderSat;
-    state = initLoRa(param, paramsFossa, myRadio, isPassing);
-  }else{
-    param.modeminfo.satellite = "Norbi"; 
+  param.modeminfo.satellite = orderSat;
+  // if-else to death: I don't know the best solution to clean this function. Sorry!
+  if(orderSat == "Norbi"){
     state = initLoRa(param, paramsNorbi, myRadio, isPassing);
+  }else if(orderSat == "FossaSat-2E11" || orderSat == "FossaSat-2E12"){
+    state = initLoRa(param, paramsFossa, myRadio, isPassing);
+  }else if(orderSat == "GaoFen-7"){
+    state = initLoRa(param, paramsGaoFen7, myRadio, isPassing);
+  }else if(orderSat == "GaoFen-19"){
+    state = initLoRa(param, paramsGaoFen19, myRadio, isPassing);
+  }else if(orderSat == "FEES"){
+    state = initLoRa(param, paramsFEES, myRadio, isPassing);
+  }else if(orderSat == "SATLLA-2B"){
+    state = initLoRa(param, paramsSATLLA2B, myRadio, isPassing);
+  }else{
+    state = initLoRa(param, paramsSapling2, myRadio, isPassing);
   }
   return state;
 }
