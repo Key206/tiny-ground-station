@@ -1,8 +1,10 @@
 #include <HTTPClient.h>
 
-#define STEP_JUMP_TLE          140
+#define STEP_JUMP_TLE           140
 //#define NUM_OF_SAT             13
-#define OFFSET_TIME_PREDICT    600 // in second
+#define OFFSET_TIME_PREDICT     600 // in second
+#define LENGTH_SAT_NAME			50
+#define MAX_CHAR_ONE_LINE_TLE	69
 
 void updateTleData(String& payload, String serverName);
 bool checkNameSat(String nameSat, String payload, uint16_t& posStartTLEsLine1);
