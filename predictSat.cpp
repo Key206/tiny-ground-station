@@ -107,6 +107,7 @@ bool createUpcomingList(String* listUpcomingSat, Sgp4 sat, String payload)
 bool createUpcomingOrderList(String* listUpcomingSat, Sgp4 sat, String payload)
 {  
   unsigned long unix_t = 0;
+  String tmp_name;
   getEpochTimeNow(unix_t);
   if(!unix_t)
     return FAIL_CODE;
@@ -114,11 +115,12 @@ bool createUpcomingOrderList(String* listUpcomingSat, Sgp4 sat, String payload)
   for(uint8_t i = 0; i < NUM_ORDER_SAT; ++i){
     initialize_Sat(listUpcomingSat[i], sat, payload);
     timeMaxElevationList[i] = Predict(sat, unix_t);
+    //Serial.print(listUpcomingSat[i]); Serial.print(" - "); Serial.println(timeMaxElevationList[i]);
   }
   for(uint8_t i = 0; i < NUM_ORDER_SAT - 1; ++i){
     for(uint8_t j = i + 1; j < NUM_ORDER_SAT; ++j){
       if(timeMaxElevationList[i] > timeMaxElevationList[j]){
-        String tmp_name = listUpcomingSat[i];
+        tmp_name = listUpcomingSat[i];
         unsigned long tmp_t = timeMaxElevationList[i];
         
         listUpcomingSat[i] = listUpcomingSat[j];

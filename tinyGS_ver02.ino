@@ -6,14 +6,17 @@
 #include "ESPAsyncWebServer.h"
 #include <SPIFFS.h>
 
-#define SSID_WIFI                             "Thanh Tai"
+#define SSID_WIFI                             "TinyGS"
 #define PASSWORD_WIFI                         "123456789"
 
 #define URL_TLE_TINYGS                        "https://api.tinygs.com/v1/tinygs_supported.txt"
 #define SERVER_NTP                            "pool.ntp.org"
 
+#define RX_EN_PIN                             13
+#define TX_EN_PIN                             14
+
 #define uS_TO_S_FACTOR                        1000000ULL  /* Conversion factor for micro seconds to seconds */
-#define TIME_PREPARE_AFTER_WAKEUP             10          /* in second */
+#define TIME_PREPARE_AFTER_WAKEUP             0          /* in second */
 #define TIME_ACCEPT_PASS_LISTEN               5          /* in second */
 #define SAVE_MODE                             0
 #define FOCUS_MODE                            1
@@ -29,8 +32,10 @@ timeInfoSat epochInfo;
 Status status;
 SX1278 radio = new Module(5, 4, 27, 17);
 AsyncWebServer server(80);
+//FirebaseAuth auth;
+//FirebaseConfig config;
 /* Create order sat list */
-String orderSatList[8] = {"Norbi", "FossaSat-2E11", "FossaSat-2E12", "GaoFen-7", "GaoFen-19", "FEES", "SATLLA-2B", "Sapling2"};
+String orderSatList[8] = {"RS52SV", "FossaSat-2E11", "FossaSat-2E12", "GaoFen-7", "FEES", "SATLLA-2B", "FossaSat-2E8", "GaoFen-19"};
 /* Create global variables */
 String payload;
 unsigned long epochNow = 1660138928;
@@ -49,33 +54,34 @@ void setup() {
   Serial.println(WiFi.localIP());
   pinMode(DIR_AZ, OUTPUT);
   pinMode(DIR_EL, OUTPUT);
- 
+  pinMode(RX_EN_PIN, OUTPUT);
+  pinMode(TX_EN_PIN, OUTPUT);
+  
   configTime(GMT_OFFSET_SECOND, DAYLIGHT_OFFSET_SECOND, SERVER_NTP);
   getEpochTimeNow(epochNow);
   Serial.println(epochNow);
-
+  
   status.stateSD = initSDCard();
   
   updateTleData(payload, URL_TLE_TINYGS);
-  saveTleDataToSD(payload); // use when offline
-  mySat.site(10.954,106.852,18);
+  mySat.site(10.869,106.802,21);
   totalSat = NUM_ORDER_SAT;
   createUpcomingOrderList(orderSatList, mySat, payload);
-  
   EEPROM.begin(EEPROM_SIZE);
   if((EEPROM.read(ADDR_ID_EEPROM) > 0) && (EEPROM.read(ADDR_ID_EEPROM) < 255)){
     status.lastPacketInfo.id = EEPROM.read(ADDR_ID_EEPROM);
   }
-  initFirebase();
+  //initFirebase();
+  
   if(!SPIFFS.begin()){
     Serial.println("An Error has occurred while mounting SPIFFS");
-    //return;
   }
   createWebPage();
   server.begin();
-  setupPWM();  
+  setupPWM(); 
 }
 void loop(){
+  
   switch(state.current){
     case STATE_PRE_PASS:
       prePass(posInList, epochNow, FOCUS_MODE, state);
@@ -89,6 +95,8 @@ void loop(){
     default:
       break;
   }
+  
+  
 }
 void goToSleep(uint64_t timeToSleep)
 {
@@ -104,18 +112,19 @@ uint64_t calculateSleepTime(unsigned long Now, unsigned long Start)
 }
 void findSatEpochInfo(uint8_t positionInOrder, unsigned long& unixtNow){
   getEpochTimeNow(unixtNow);
-  initialize_Sat(orderSatList[positionInOrder], mySat, payload);
+  initialize_Sat(orderSatList[positionInOrder], mySat, payload); 
   status.statePredict = Predict(mySat, unixtNow);
 }
 void prePass(uint8_t positionInOrder, unsigned long& unixtNow, uint8_t modeOP, stateGS& state){
   findSatEpochInfo(positionInOrder, unixtNow);
   state.previous = STATE_PRE_PASS;
+  Serial.println(epochInfo.epochStart);
   if(epochInfo.epochStart - TIME_PREPARE_AFTER_WAKEUP > unixtNow){
     if(modeOP == SAVE_MODE){
       uint64_t timeToSleep = calculateSleepTime(unixtNow, epochInfo.epochStart);
       goToSleep(timeToSleep);
     }else{
-      configParamsLoRa(status, radio, "GaoFen-7", false);
+      configParamsLoRa(status, radio, orderSatList[positionInOrder], false);
       unsigned long unixtStart = epochInfo.epochStart - TIME_PREPARE_AFTER_WAKEUP;
       while(unixtStart > unixtNow){
         listenRadio(radio);
@@ -130,13 +139,22 @@ void prePass(uint8_t positionInOrder, unsigned long& unixtNow, uint8_t modeOP, s
 }
 void inPass(uint8_t positionInOrder, unsigned long& unixtNow, stateGS& state){
   Serial.print("Sat listen: "); Serial.println(orderSatList[positionInOrder]);
-  configParamsLoRa(status, radio, orderSatList[positionInOrder], true);
+  configParamsLoRa(status, radio, orderSatList[positionInOrder], true); 
+  bool endTime = false;
+  digitalWrite(RX_EN_PIN, HIGH);
+  digitalWrite(TX_EN_PIN, LOW);
   while(unixtNow <= epochInfo.epochStop){
     listenRadio(radio);
     getEpochTimeNow(unixtNow);
+    mySat.findsat(unixtNow);
+    rotateInTrackingMode(mySat, endTime);
   }
+  endTime = true;
+  rotateInTrackingMode(mySat, endTime);
   state.previous = STATE_IN_PASS;
   state.current = STATE_POST_PASS;
+  digitalWrite(RX_EN_PIN, LOW);
+  digitalWrite(TX_EN_PIN, LOW);
 }
 void postPass(uint8_t& positionInOrder, uint8_t totalSatOrder, stateGS& state){
   Serial.println("update TLE");

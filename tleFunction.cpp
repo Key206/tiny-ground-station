@@ -16,14 +16,14 @@ void updateTleData(String& payload, String serverName)
   }
   http.end();
 }
-bool checkNameSat(String nameSat, String payload, uint16_t& posStartTLEsLine1){
+bool checkNameSat(String nameSat, String tle, uint16_t& posStartTLEsLine1){
   String tempName;
   uint16_t i, j;
-  uint16_t lengthOfPayload = payload.length();
+  uint16_t lengthOfPayload = tle.length();
   for(i = 0; i < lengthOfPayload; ++i){
     for(j = i; j < i + 50; ++j){
-      if(payload[j] == '\n'){
-        tempName = payload.substring(i,j);
+      if(tle[j] == '\n'){
+        tempName = tle.substring(i,j);
         if(strcmp(tempName.c_str(), nameSat.c_str()) == 0){
           posStartTLEsLine1 = j + 1;
           return true;
@@ -34,6 +34,9 @@ bool checkNameSat(String nameSat, String payload, uint16_t& posStartTLEsLine1){
       }
     }
     i = j + STEP_JUMP_TLE;
+    if(tle[i] != '\n'){
+      while(tle[++i] != '\n');
+    }
   }
   return false;
 }
@@ -57,7 +60,7 @@ bool getTLE(String nameSat, char* tle_line1, char* tle_line2, String payload){
     return true;
   }  
   else{
-    Serial.println("fail");
+    Serial.println("fail --");
     return false;
   }   
 }

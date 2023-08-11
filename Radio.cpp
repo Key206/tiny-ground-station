@@ -3,19 +3,19 @@
 #include "addons/TokenHelper.h"
 #include "addons/RTDBHelper.h"
 
-FirebaseData fbdo;
 FirebaseAuth auth;
 FirebaseConfig config;
+FirebaseData fbdo;
 bool signupOK = false;
 FirebaseJson json;
 
-float paramsNorbi[4] = {436.703, 250, 10, 5};
-float paramsFossa[4] = {401.7, 125, 11, 8}; 
-float paramsGaoFen7[4] = {400.45, 500, 9, 5};
-float paramsGaoFen19[4] = {400.13, 500, 9, 5};
-float paramsSapling2[4] = {437.4, 125, 7, 8};
-float paramsSATLLA2B[4] = {437.25, 62.5, 10, 5};
-float paramsFEES[4] = {437.2, 125, 9, 5};
+float paramsNorbi[6] = {436.703, 250, 10, 5, 18, 8};
+float paramsFossa[6] = {401.7, 125, 11, 8, 18, 8}; 
+float paramsGaoFen7[6] = {400.45, 500, 9, 5, 18, 8};
+float paramsGaoFen19[6] = {400.45, 500, 9, 5, 18, 8};
+float paramsSapling2[6] = {437.4, 125, 7, 8, 18, 8};
+float paramsSATLLA2B[6] = {437.25, 62.5, 10, 5, 4, 8};
+float paramsFEES[6] = {437.2, 125, 9, 5, 18, 6};
 
 volatile bool receivedFlag = false;
 volatile bool enableInterrupt = true;
@@ -62,33 +62,35 @@ void listenRadio(SX1278& radio)
     size_t respLen = 0;
     uint8_t *respFrame = 0;
     int16_t state = 0;
+    String encoded;
     
     respLen = radio.getPacketLength();
     respFrame = new uint8_t[respLen];
     state = radio.readData(respFrame, respLen);
     status.lastPacketInfo.rssi = radio.getRSSI();
     status.lastPacketInfo.snr = radio.getSNR();
-    // use for test
-    //Serial.print("RSSI: "); Serial.println(status.lastPacketInfo.rssi);
-    //Serial.print("SNR: "); Serial.println(status.lastPacketInfo.snr);
-    //saveTestLNA();
-    // 
+  
     status.lastPacketInfo.id += 1;
     EEPROM.write(ADDR_ID_EEPROM, status.lastPacketInfo.id);
     EEPROM.commit();
-    
+      
     unsigned long unixt = 0;
     getEpochTimeNow(unixt);
     mySat.findsat(unixt);
     status.lastPacketInfo.lat = mySat.satLat;
     status.lastPacketInfo.lon = mySat.satLon;
     if(state == RADIOLIB_ERR_NONE){
+      encoded = base64::encode(respFrame, respLen); 
       Serial.println("sended");
-      String encoded = base64::encode(respFrame, respLen);
-      status.lastPacketInfo.packet = encoded;
-      sendPacketToDatabase();
-      saveDataToSD(encoded);
+    }else if(RADIOLIB_ERR_CRC_MISMATCH){
+      encoded = "CRC_ERR";
+    }else{
+      encoded = "FAIL_CODE";
     }
+    status.lastPacketInfo.packet = encoded;
+    //sendPacketToDatabase();
+    saveDataToSD(encoded);
+    
     delete[] respFrame;
     enableInterrupt = true;
     radio.startReceive();
@@ -107,16 +109,6 @@ void saveDataToSD(String packet){
   serializeJson(JSONbuffer, JSONmessageBuffer);
   status.stateSD = appendFile(SD, "/LoRa.txt", JSONmessageBuffer);
 }
-/*
-void saveTestLNA(){
-  StaticJsonDocument<100> JSONbuffer;
-  JSONbuffer["rssi"] = status.lastPacketInfo.rssi;
-  JSONbuffer["snr"] = status.lastPacketInfo.snr;
-  char JSONmessageBuffer[100]; // be careful the size of buffer
-  serializeJson(JSONbuffer, JSONmessageBuffer);
-  status.stateSD = appendFile(SD, "/LNA.txt", JSONmessageBuffer);
-}
-*/
 bool configParamsLoRa(Status& param, SX1278& myRadio, String orderSat, bool isPassing){
   bool state = true;
   param.modeminfo.satellite = orderSat;
@@ -143,24 +135,29 @@ bool initLoRa(Status& param, float* paramsSat, SX1278& myRadio, bool isPassing){
   param.modeminfo.bw = paramsSat[1];
   param.modeminfo.sf = paramsSat[2];
   param.modeminfo.cr = paramsSat[3];
+  param.modeminfo.sw = paramsSat[4];
+  param.modeminfo.preambleLength = paramsSat[5];
   param.stateLoRa = beginLoRa(myRadio, isPassing);
   if(!param.stateLoRa){
     return false;
   }
   return true;
 }
-bool initFirebase()
+bool initFirebase(FirebaseAuth& authFirebase, FirebaseConfig& configFirebase)
 {
-  config.api_key = API_KEY;
-  config.database_url = DATABASE_URL;
-  if (Firebase.signUp(&config, &auth, "", "")){
+  Serial.println("in shit");
+  configFirebase.api_key = "AIzaSyAbrEhpaVJVDAyvv8ZVH7f3A6DnYXKM2hY";
+  configFirebase.database_url = "https://tinygs1-default-rtdb.asia-southeast1.firebasedatabase.app/";
+  Serial.println("before shit");
+  if (Firebase.signUp(&configFirebase, &authFirebase, "", "")){
     signupOK = true;
   }
   else{
     return false;
   }
-  config.token_status_callback = tokenStatusCallback; 
-  Firebase.begin(&config, &auth);
+  Serial.println("after shit");
+  configFirebase.token_status_callback = tokenStatusCallback; 
+  Firebase.begin(&configFirebase, &authFirebase);
   return true;
 }
 bool sendPacketToDatabase()
@@ -178,5 +175,6 @@ bool sendPacketToDatabase()
     if (fbdo.errorReason().c_str() != "connection lost"){
       return (Firebase.RTDB.setJSON(&fbdo, parentPath.c_str(), &json) ? true : false);
     }
+    return false;
   }  
 }

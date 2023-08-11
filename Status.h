@@ -21,7 +21,7 @@ struct ModemInfo {
   float   freqDev     = 5.0;
   uint8_t    OOK      = false; // 0 disable  1 -> 0.3  2-> 0.5  3 -> 0.6  4-> 1.0
   bool    crc         = true;
-  uint8_t fldro       = true;
+  uint8_t fldro       = 1;
   uint8_t gain        = 0;
   uint32_t  NORAD     = 46494;  
   uint8_t   fsw[8]    = {0,0,0,0,0,0,0,0};

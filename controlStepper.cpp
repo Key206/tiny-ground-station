@@ -53,6 +53,8 @@ void rotateInTrackingMode(Sgp4& satInfo, bool resetFlag)
   
   double curDegreeAz = satInfo.satAz;
   double curDegreeEl = satInfo.satEl;
+
+  Serial.print(" Az: ");Serial.print(curDegreeAz);Serial.print(", El: ");Serial.println(curDegreeEl);
   
   double targetDegreeAz = curDegreeAz - preDegreeAz;
   double targetDegreeEl = curDegreeEl - preDegreeEl;
@@ -66,18 +68,22 @@ void rotateInTrackingMode(Sgp4& satInfo, bool resetFlag)
   if(!resetFlag){
     if(targetDegreeAz >= MIN_DEGREE_ROTATE || targetDegreeAz <= -MIN_DEGREE_ROTATE){
       preDegreeAz = curDegreeAz;
-    }else{
-      return;
+      rotateStepper(STEPPER_AZ, targetDegreeAz); 
+      Serial.print("targetAz: ");Serial.println(targetDegreeAz);
+    }
+    if(targetDegreeEl >= MIN_DEGREE_ROTATE || targetDegreeEl <= -MIN_DEGREE_ROTATE){
+        preDegreeEl = curDegreeEl;
+        rotateStepper(STEPPER_EL, targetDegreeEl);
+        Serial.print(", targetEl: ");Serial.println(targetDegreeEl);
     }
   }else{
     rotateStepper(STEPPER_AZ, -preDegreeAz);
     rotateStepper(STEPPER_EL, -preDegreeEl);
+    Serial.print("DoneAz: ");Serial.print(-preDegreeAz); Serial.print(", DoneEl: ");Serial.println(-preDegreeEl); 
     preDegreeAz = 0;
     preDegreeEl = 0;
     return;
-  }
-  rotateStepper(STEPPER_EL, targetDegreeEl);
-  rotateStepper(STEPPER_AZ, targetDegreeAz); 
+  } 
 }
 bool rotateInStandardMode(Sgp4& satInfo, unsigned long t_max)
 { 

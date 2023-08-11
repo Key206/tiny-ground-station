@@ -2,6 +2,7 @@
 #include <ArduinoJson.h>
 #include <EEPROM.h>
 #include <base64.h>
+//#include <Firebase_ESP_Client.h>
 #include "Status.h"
 #include "SDcard.h"
 
@@ -14,7 +15,7 @@
 #define EEPROM_SIZE             2
 #define ADDR_ID_EEPROM          0
 #define ADDR_MODE_EEPROM        1
-#define LNA_GAIN                2
+#define LNA_GAIN                0
 
 #define API_KEY                 "AIzaSyBu1oFsiXLwDM_QzTEmeNTXlD0-NKakTp8"
 #define DATABASE_URL            "https://tinygs2-default-rtdb.asia-southeast1.firebasedatabase.app/"
